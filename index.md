@@ -5,6 +5,6 @@
 * Linux和Windows自动化运维 automated operation of Linux and Windows 
 
 ## 联系我 Contact me
-* [博客 Blogs](blog_index.md)
+* [博客 Blogs](blog_index.html)
 * 电话 Phone：+1(301) 799-3390
 * 邮件 Email：md11235@gmail.com
