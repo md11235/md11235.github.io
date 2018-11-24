@@ -1,5 +1,5 @@
 #+SETUPFILE: setup/theme-readtheorg-local.setup
-#+TITLE: Random Scripting Memos 脚本佳人
+#+TITLE: 八比特信息和数据技术咨询
 
 - [[file:windows-sublime-python3-strange-glyphs.org][Windows上Sublime3跑Python3程序时，乱码怎么弄？]]
 - [[file:minimum-config-for-tmux.org][最简化的用ctrl-o做tmux的主键的配置]]
