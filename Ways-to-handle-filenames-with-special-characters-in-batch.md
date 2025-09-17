@@ -3,13 +3,11 @@ layout: default
 title: 批量处理文件名带有特殊字符的文件
 date: 2025-09-17
 categories:
-- technology
-- os
-- Linux
-- Bash
-
+  - technology
+  - os
+  - Linux
+  - Bash
 tags:
-  - "#kb/Linux_And_Bash"
 ---
 
 # 场景：带有特殊字符的文件名
