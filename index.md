@@ -26,8 +26,8 @@ tags:
 > ^indexof-kb
 
 <!-- [Contribution guidelines for this project](docs/CONTRIBUTING.md) -->
-[批量处理文件名带有特殊字符的文件][Ways to handle filenames with special characters in batch.md]
-[Bash进程替换](Bash process substitution.md)
+[批量处理文件名带有特殊字符的文件](Ways to handle filenames with special characters in batch.md)
+[Bash进程替换](bash process substitution.md)
 
 # 联系我 Contact me
 * [博客 Blogs](blog_index.html)
