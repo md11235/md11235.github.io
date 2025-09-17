@@ -20,6 +20,7 @@ tags:
 > - [[Index3]]: index3
 > - **Linux and bash**
 > 	- [[Ways to handle filenames with special characters in batch]]: 批量处理文件名带有特殊字符的文件
+> 	- [[Ways_to_handle_filenames_with_special_characters_in_batch]]: 批量处理文件名带有特殊字符的文件
 > - **Process substituion**
 > 	- [[Bash process substitution]]: Bash进程替换
 > 
