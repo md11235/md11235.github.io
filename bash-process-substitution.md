@@ -2,7 +2,7 @@
 layout: default
 title: Bash进程替换
 tags:
-  - "#kb/Process_substitution"
+  - "#kb/Bash"
 ---
 
 # 进程替换如何实现的？

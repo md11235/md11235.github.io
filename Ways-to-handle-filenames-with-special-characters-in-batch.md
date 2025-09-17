@@ -8,6 +8,7 @@ categories:
   - Linux
   - Bash
 tags:
+  - "#kb/Bash"
 ---
 
 # 场景：带有特殊字符的文件名

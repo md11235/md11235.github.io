@@ -14,10 +14,9 @@ tags:
 
 
 > [!example] #kb
-> - **Linuxandbash2**
-> 	- [Ways_to_handle_filenames_with_special_characters_in_batch](ways_to_handle_filenames_with_special_characters_in_batch.md): 批量处理文件名带有特殊字符的文件
-> - **Process substitution**
+> - **Bash**
 > 	- [Bash-process-substitution](bash-process-substitution.md): Bash进程替换
+> 	- [Ways-to-handle-filenames-with-special-characters-in-batch](Ways-to-handle-filenames-with-special-characters-in-batch.md): 批量处理文件名带有特殊字符的文件
 > 
 > ^indexof-kb
 
