@@ -1,6 +1,6 @@
 ---
+layout: page
 title: Bash进程替换
-layout: post
 tags:
   - "#kb/Process_substituion"
 ---

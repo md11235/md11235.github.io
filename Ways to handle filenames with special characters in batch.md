@@ -1,6 +1,6 @@
 ---
+layout: page
 title: 批量处理文件名带有特殊字符的文件
-layout: post  
 date: 2025-09-17
 categories:  
 - technology  
