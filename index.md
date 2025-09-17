@@ -1,6 +1,6 @@
 ---
-title: Sam的知识库
-layout: post
+layout: page
+title: "Sam的知识库"
 tags:
   - "#kb/idx"
 ---
