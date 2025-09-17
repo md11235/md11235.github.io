@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 title: "Sam的知识库"
 tags:
   - "#kb/idx"

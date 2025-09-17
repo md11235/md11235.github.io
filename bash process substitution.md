@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 title: Bash进程替换
 tags:
   - "#kb/Process_substituion"
