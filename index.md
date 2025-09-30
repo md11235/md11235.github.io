@@ -16,6 +16,7 @@ tags:
 > [!example] #kb
 > - **Bash**
 > 	- [Bash-process-substitution](bash-process-substitution.md): Bash进程替换
+> 	- [Ctrl-d在Bash里的不同功能](ctrl-d在Bash里的不同功能.md): `ctrl-d`在Bash里的不同功能
 > 	- [Ways-to-handle-filenames-with-special-characters-in-batch](Ways-to-handle-filenames-with-special-characters-in-batch.md): 批量处理文件名带有特殊字符的文件
 > 
 > ^indexof-kb
