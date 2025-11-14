@@ -17,6 +17,7 @@ tags:
 > - **Bash**
 > 	- [Bash-process-substitution](bash-process-substitution.md): Bash进程替换
 > 	- [Ctrl-d在Bash里的不同功能](ctrl-d在Bash里的不同功能.md): `ctrl-d`在Bash里的不同功能
+> 	- [Git解决冲突简短入门教程](git解决冲突简短入门教程.md): git解决冲突简短入门教程
 > 	- [Ways-to-handle-filenames-with-special-characters-in-batch](Ways-to-handle-filenames-with-special-characters-in-batch.md): 批量处理文件名带有特殊字符的文件
 > - **Powershell**
 > 	- [如何在PowerShell里解压缩zip文件](如何在PowerShell里解压缩zip文件.md): 如何在PowerShell里解压缩zip文件
