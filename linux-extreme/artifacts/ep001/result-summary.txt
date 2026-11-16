@@ -1,0 +1,12 @@
+EP001 — Argument Extreme, verified execution (2026-11-16)
+Runtime: Linux 6.18.57 x86_64, Bash, GNU grep/find environment
+ARG_MAX: 2097152 bytes
+Stack soft limit: 8192 KiB
+Input: 12000 files, filename length 180 characters
+Shell glob command: grep -l NEEDLE "$dir"/*.txt
+Observed shell exit status: 126
+Observed stderr: /usr/bin/grep: Argument list too long
+Batched alternative: find "$dir" ... -exec grep -l NEEDLE {} +
+Observed exit status: 1 (expected: no matches in empty files; no E2BIG)
+Temporary files: automatically removed via EXIT trap
+Evidence: output.txt. Screenshot: a programmatic rendering of the real output, not a direct screen capture.
