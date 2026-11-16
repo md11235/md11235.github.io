@@ -7,11 +7,6 @@ tags:
 
 # 操作系统命令行接口及其自动化
 
-涉及如下内容：
-
-* Bash命令行与GNU/Linux操作系统
-* PowerShell与Windows操作系统
-
 
 > [!example] #kb
 > - **Bash**
@@ -27,5 +22,3 @@ tags:
 # 联系我 Contact me
 * 电话 Phone：+1(301) 799-3390
 * 邮件 Email：md11235@gmail.com
-
-
