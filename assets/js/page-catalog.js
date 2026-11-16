@@ -38,6 +38,7 @@
     if (!featureGrid) return;
     const filtered = pages.filter(p => p.url && p.title && p.updated_at);
     featureGrid.replaceChildren(...filtered.slice(0, maxHome).map(card));
+    featureGrid.hidden = filtered.length === 0;
     if (fallback && filtered.length) fallback.hidden = true;
     const count = document.querySelector("#featured-count");
     if (count) count.textContent = filtered.length + " ARTICLES · NEWEST FIRST";
