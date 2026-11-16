@@ -46,6 +46,7 @@ permalink: /
   <div class="archive-box">
     <h3>操作系统、网络与工具</h3>
     <ul class="archive-links">
+      <li><a href="{{ '/linux-grep-arg-max.html' | relative_url }}">Linux 命令行实验：grep 的参数为什么会超长</a></li>
       <li><a href="{{ '/ctrl-d在Bash里的不同功能.html' | relative_url }}">Ctrl-D 在 Bash 里的不同功能</a></li>
       <li><a href="{{ '/如何在PowerShell里解压缩zip文件.html' | relative_url }}">PowerShell 解压缩 ZIP</a></li>
       <li><a href="{{ '/how-to-check-host-identity-when-first-connecting-to-it-with-ssh.html' | relative_url }}">首次 SSH 连接时校验主机身份</a></li>
