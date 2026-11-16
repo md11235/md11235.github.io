@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 604" role="img" aria-label="EP001 real experiment output rendered as terminal window">
+<rect width="1180" height="604" rx="18" fill="#0b1320"/>
+<rect x="10" y="10" width="1160" height="584" rx="17" fill="#111b2d" stroke="#354860" stroke-width="2"/>
+<path d="M27 10 H1153 Q1170 10 1170 27 V62 H10 V27 Q10 10 27 10" fill="#202c3f"/>
+<circle cx="37" cy="31" r="8" fill="#fd635d"/>
+<circle cx="63" cy="31" r="8" fill="#ffbd4c"/>
+<circle cx="89" cy="31" r="8" fill="#2aca65"/>
+<text x="138" y="37" font-family="monospace" font-size="18" fill="#b9c7d9">Linux Extreme · EP001 · Captured output</text>
+<text x="38" y="103" font-family="monospace" font-size="17" fill="#e3e9f4">EP001 / Linux Extreme × Limitless</text>
+<text x="38" y="132" font-family="monospace" font-size="17" fill="#e3e9f4">kernel: 6.18.57</text>
+<text x="38" y="161" font-family="monospace" font-size="17" fill="#e3e9f4">ARG_MAX: 2097152 bytes</text>
+<text x="38" y="190" font-family="monospace" font-size="17" fill="#e3e9f4">stack limit: 8192 KiB</text>
+<text x="38" y="219" font-family="monospace" font-size="17" fill="#e3e9f4">file count: 12000; filename length: 180</text>
+<text x="38" y="248" font-family="monospace" font-size="17" fill="#e3e9f4">test directory: /tmp/linux-extreme-ep001.4WBxpcr6</text>
+<text x="38" y="277" font-family="monospace" font-size="17" fill="#e3e9f4">preparing filenames...</text>
+<text x="38" y="306" font-family="monospace" font-size="17" fill="#e3e9f4"></text>
+<text x="38" y="335" font-family="monospace" font-size="17" fill="#68e6c5">$ grep -l NEEDLE &quot;$dir&quot;/*.txt</text>
+<text x="38" y="364" font-family="monospace" font-size="17" fill="#f07879">exit status: 126</text>
+<text x="38" y="393" font-family="monospace" font-size="17" fill="#f07879">/mnt/data/linux-extreme-release-20261116/scripts/ep001.sh: line 25: /usr/bin/grep: Argument list too long</text>
+<text x="38" y="422" font-family="monospace" font-size="17" fill="#e3e9f4"></text>
+<text x="38" y="451" font-family="monospace" font-size="17" fill="#68e6c5">$ find &quot;$dir&quot; -maxdepth 1 -name &quot;*.txt&quot; -exec grep -l NEEDLE {} +</text>
+<text x="38" y="480" font-family="monospace" font-size="17" fill="#e3e9f4">exit status: 1</text>
+<text x="38" y="509" font-family="monospace" font-size="17" fill="#e3e9f4">note: grep status 1 means no matches; that is expected for empty test files.</text>
+<text x="38" y="538" font-family="monospace" font-size="17" fill="#e3e9f4">cleanup: temporary files removed by EXIT trap</text>
+</svg>
