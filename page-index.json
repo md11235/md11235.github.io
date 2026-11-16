@@ -1,0 +1,470 @@
+{
+  "schema": 1,
+  "source": "git-last-commit",
+  "generated_at": "2026-11-16T00:23:18.197002+00:00",
+  "count": 66,
+  "pages": [
+    {
+      "title": "Git Changes · 3D Flow",
+      "url": "/animated_cs/git/",
+      "path": "animated_cs/git/index.html",
+      "updated_at": "2026-11-16T08:16:38+08:00",
+      "category": "Git / Version Control"
+    },
+    {
+      "title": "Protomaps 与其它地图技术有什么不同？",
+      "url": "/protomaps/",
+      "path": "protomaps/index.md",
+      "updated_at": "2026-11-16T08:05:17+08:00",
+      "category": "Maps / Spatial"
+    },
+    {
+      "title": "git解决冲突简短入门教程",
+      "url": "/git解决冲突简短入门教程.html",
+      "path": "git解决冲突简短入门教程.md",
+      "updated_at": "2025-11-14T19:09:48+08:00",
+      "category": "Git / Version Control"
+    },
+    {
+      "title": "如何在PowerShell里解压缩zip文件",
+      "url": "/如何在PowerShell里解压缩zip文件.html",
+      "path": "如何在PowerShell里解压缩zip文件.md",
+      "updated_at": "2025-11-11T16:35:35+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "`ctrl-d`在Bash里的不同功能",
+      "url": "/ctrl-d在Bash里的不同功能.html",
+      "path": "ctrl-d在Bash里的不同功能.md",
+      "updated_at": "2025-09-30T12:24:24+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "Bash进程替换",
+      "url": "/bash-process-substitution.html",
+      "path": "bash-process-substitution.md",
+      "updated_at": "2025-09-17T16:37:45+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "批量处理文件名带有特殊字符的文件",
+      "url": "/Ways-to-handle-filenames-with-special-characters-in-batch.html",
+      "path": "Ways-to-handle-filenames-with-special-characters-in-batch.md",
+      "updated_at": "2025-09-17T16:37:45+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "拆分字符串为单个字符并统计每个字符的出现次数",
+      "url": "/split_string_and_count_character_frequency.html",
+      "path": "split_string_and_count_character_frequency.md",
+      "updated_at": "2023-10-31T17:01:07+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "Risk Minimization",
+      "url": "/machine-learning/risk-minimization.html",
+      "path": "machine-learning/risk-minimization.md",
+      "updated_at": "2018-11-21T16:55:07+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "在windows上用cygwin自动安装多个软件包",
+      "url": "/automate_cygwin_initial_setup.html",
+      "path": "automate_cygwin_initial_setup.md",
+      "updated_at": "2018-11-17T11:58:13+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "Windows上Sublime3跑Python3程序时，乱码怎么弄？",
+      "url": "/windows-sublime-python3-strange-glyphs.html",
+      "path": "windows-sublime-python3-strange-glyphs.html",
+      "updated_at": "2018-07-29T14:48:47+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "在Windows cmd里查找占用端口的进程并杀掉",
+      "url": "/windows-find-used-port-and-kill-process.html",
+      "path": "windows-find-used-port-and-kill-process.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "Windows上Emacs里加载yasnippets",
+      "url": "/windows-emacs-yasnippets.html",
+      "path": "windows-emacs-yasnippets.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "单引号、双引号与Windows cmd",
+      "url": "/wget-and-singlel-quote-in-windows-cmd.html",
+      "path": "wget-and-singlel-quote-in-windows-cmd.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "‎",
+      "url": "/unit-testing.html",
+      "path": "unit-testing.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "‎",
+      "url": "/ubuntu-usage.html",
+      "path": "ubuntu-usage.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "调整没有显示器的ubuntu server的分辨率",
+      "url": "/ubuntu-headless-server-custom-resolution.html",
+      "path": "ubuntu-headless-server-custom-resolution.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "计划上最痛苦的事情",
+      "url": "/the-most-painful-things.html",
+      "path": "the-most-painful-things.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "用iperf3测试网络吞吐量",
+      "url": "/testing-network-throughput-using-iperf3.html",
+      "path": "testing-network-throughput-using-iperf3.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "sshfs通过用户和组映射挂载另一服务器的目录为本地目录",
+      "url": "/sshfs-options-to-mount-remote-server-directory.html",
+      "path": "sshfs-options-to-mount-remote-server-directory.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "在python3里序列化自定义类的对象",
+      "url": "/serialize-python-cusotm-objects-using-hickle.html",
+      "path": "serialize-python-cusotm-objects-using-hickle.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "在没有图形界面的linux里管理vmware虚拟机",
+      "url": "/run-vmware-vm-without-gui.html",
+      "path": "run-vmware-vm-without-gui.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "重置Windows下NTFS文件系统上的文件安全和权限设置",
+      "url": "/resetting-NTFS-files-security-and-permission-in-Windows.html",
+      "path": "resetting-NTFS-files-security-and-permission-in-Windows.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "修复pdf文件",
+      "url": "/repair-pdf.html",
+      "path": "repair-pdf.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "配置redmine的邮件通知",
+      "url": "/redmine-email-notification-config.html",
+      "path": "redmine-email-notification-config.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "快速把手写签名的照片转换为透明的png图片（用命令行工具）",
+      "url": "/quick-way-to-get-your-signature.html",
+      "path": "quick-way-to-get-your-signature.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "‎",
+      "url": "/putty-command-line-port-forwarding.html",
+      "path": "putty-command-line-port-forwarding.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "PostgreSQL主版本号升级，如何升级数据库文件",
+      "url": "/postgres_bruteforce_upgrade.html",
+      "path": "postgres_bruteforce_upgrade.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "OpenRefine 入门教程",
+      "url": "/openrefine-tutorial.html",
+      "path": "openrefine-tutorial.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "‎",
+      "url": "/notes/y_combinator.html",
+      "path": "notes/y_combinator.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "‎",
+      "url": "/notes/unicode.html",
+      "path": "notes/unicode.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "编程范式 Programming Paradigms",
+      "url": "/notes/programming_paradigms.html",
+      "path": "notes/programming_paradigms.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "Steps for Writing Programs",
+      "url": "/notes/programm.html",
+      "path": "notes/programm.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "Lisp DNA",
+      "url": "/notes/lisp.html",
+      "path": "notes/lisp.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "怎样培养沉稳的气质",
+      "url": "/notes/life.html",
+      "path": "notes/life.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "如何 debug Adobe AIR 程序",
+      "url": "/notes/how_to_debug_adobe_air_app.html",
+      "path": "notes/how_to_debug_adobe_air_app.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "Emacs 与 Vim",
+      "url": "/notes/emacs_vim.html",
+      "path": "notes/emacs_vim.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "用Monit监控Linux性能",
+      "url": "/monit_linux_monitor.html",
+      "path": "monit_linux_monitor.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "最简化的用ctrl-o做tmux的主键的配置",
+      "url": "/minimum-config-for-tmux.html",
+      "path": "minimum-config-for-tmux.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "‎",
+      "url": "/lisp.html",
+      "path": "lisp.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "在Centos7里安装中文手册页(man-pages)",
+      "url": "/install_zh_CN_man-pages_in_centos7.html",
+      "path": "install_zh_CN_man-pages_in_centos7.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "在Centos7里安装Anaconda3",
+      "url": "/install_anaconda3_on_centos7.html",
+      "path": "install_anaconda3_on_centos7.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "在cygwin下安装和使用pipenv",
+      "url": "/install-and-use-pipenv-in-cygwin.html",
+      "path": "install-and-use-pipenv-in-cygwin.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "在cygwin下安装和使用pipenv",
+      "url": "/install-and-use-pipenv-in-cygwin-readthedoc.html",
+      "path": "install-and-use-pipenv-in-cygwin-readthedoc.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "把一行文字作为另一个已存在文件的第一行",
+      "url": "/insert-text-as-the-first-line-of-another-file.html",
+      "path": "insert-text-as-the-first-line-of-another-file.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "如何查看 conferences 或者 proceedings 是否被索引",
+      "url": "/how_to_check_conferences_or_proceedings_indexed_by_what.html",
+      "path": "how_to_check_conferences_or_proceedings_indexed_by_what.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "当第一次ssh到某台主机时如何校验主机的身份？",
+      "url": "/how-to-check-host-identity-when-first-connecting-to-it-with-ssh.html",
+      "path": "how-to-check-host-identity-when-first-connecting-to-it-with-ssh.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "‎",
+      "url": "/export-org-mode-texts-to-pdf-on-windows.html",
+      "path": "export-org-mode-texts-to-pdf-on-windows.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "怎么临时修改已经打包好的jar里的properties配置文件？",
+      "url": "/edit-java-jar-files-on-site.html",
+      "path": "edit-java-jar-files-on-site.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "用vim+xxd编辑（手写）二进制的协议内容",
+      "url": "/edit-binary-protocol-message-using-vim-xxd.html",
+      "path": "edit-binary-protocol-message-using-vim-xxd.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "‎",
+      "url": "/docker-simple-startup.html",
+      "path": "docker-simple-startup.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "‎",
+      "url": "/disable-firefox-restore-session-after-crash.html",
+      "path": "disable-firefox-restore-session-after-crash.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "在Cygwin的zsh里自动生成fake-files",
+      "url": "/cygwin-zsh-auto-generate-fake-files.html",
+      "path": "cygwin-zsh-auto-generate-fake-files.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "在cygwin里建立Windows服务",
+      "url": "/cygwin-install-services.html",
+      "path": "cygwin-install-services.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "配置ipython notebook访问万维网时的代理服务器",
+      "url": "/configure-http-proxy-for-ipython-notebooks.html",
+      "path": "configure-http-proxy-for-ipython-notebooks.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Programming / Tools"
+    },
+    {
+      "title": "Windows 10 里检测无线网卡的连接状态并重连",
+      "url": "/check_and_reconnect_win10_wlan.html",
+      "path": "check_and_reconnect_win10_wlan.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "在建立ssh隧道映射前先检查被映射端口的状态",
+      "url": "/check-port-status-before-making-ssh-tunnel.html",
+      "path": "check-port-status-before-making-ssh-tunnel.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "autossh 不使用监听端口（-M 0）",
+      "url": "/autossh-dont-use-monitor-ports.html",
+      "path": "autossh-dont-use-monitor-ports.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "‎",
+      "url": "/auto-resize-huge-image-as-powerpoint-background.html",
+      "path": "auto-resize-huge-image-as-powerpoint-background.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "Android sdk manager command line operations",
+      "url": "/android-sdkmanager-cmdline.html",
+      "path": "android-sdkmanager-cmdline.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "The days are long but the decades are short",
+      "url": "/advices-on-life.html",
+      "path": "advices-on-life.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "如何利用VNC访问平时没有图形界面的服务器",
+      "url": "/access-linux-servers-using-vnc.html",
+      "path": "access-linux-servers-using-vnc.html",
+      "updated_at": "2018-07-24T10:24:39+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "OpenRefine 入门教程",
+      "url": "/openrefine_tutorial.html",
+      "path": "openrefine_tutorial.html",
+      "updated_at": "2018-04-04T17:05:56+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "当第一次ssh到某台主机时如何校验主机的身份？",
+      "url": "/how_to_check_host_identity_when_first_connecting_to_it_with_ssh.html",
+      "path": "how_to_check_host_identity_when_first_connecting_to_it_with_ssh.html",
+      "updated_at": "2018-04-04T17:05:56+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "Android sdk manager command line operations",
+      "url": "/android_sdkmanager_cmd_line.html",
+      "path": "android_sdkmanager_cmd_line.html",
+      "updated_at": "2017-12-27T16:16:56+08:00",
+      "category": "Technical Notes"
+    },
+    {
+      "title": "postgres_bruteforce_upgrade",
+      "url": "/postgres-bruteforce-upgrade.html",
+      "path": "postgres-bruteforce-upgrade.html",
+      "updated_at": "2017-10-28T09:29:50+08:00",
+      "category": "Technical Notes"
+    }
+  ]
+}
