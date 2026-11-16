@@ -1,7 +1,10 @@
 /* Browser renderer for the Git-built chronological page catalog. No GitHub API calls. */
 (() => {
   "use strict";
-  const dataURL = "/page-index.json";
+  const dataURLs = [
+    "https://raw.githubusercontent.com/md11235/md11235.github.io/master/page-index.json",
+    "/page-index.json"
+  ];
   const fallback = document.querySelector("#recent-fallback");
   const featureGrid = document.querySelector("#auto-feature-grid");
   const archive = document.querySelector("#auto-archive");
@@ -75,9 +78,15 @@
   }
   async function load() {
     try {
-      const response = await fetch(dataURL, {cache:"no-cache"});
-      if (!response.ok) throw new Error("HTTP " + response.status);
-      const data = await response.json();
+      let data = null;
+      for (const source of dataURLs) {
+        try {
+          const response = await fetch(source, {cache:"no-cache"});
+          if (!response.ok) continue;
+          data = await response.json();
+          if (data && Array.isArray(data.pages)) break;
+        } catch (_) { /* next source */ }
+      }
       if (!data || !Array.isArray(data.pages) || data.schema !== 1) throw new Error("无效索引");
       const pages = data.pages.slice().sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));
       renderHome(pages);
