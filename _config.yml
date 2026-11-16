@@ -3,6 +3,5 @@ theme: jekyll-theme-leap-day
 gems:
   - jekyll-sitemap
 
-# Google Analytics 4: insert the Measurement ID from Analytics > Admin > Data Streams.
-# Leave empty to disable analytics without changing templates.
-ga4_measurement_id: ""
+# Google Analytics 4 Measurement ID (web data stream).
+ga4_measurement_id: "G-7JKK059DDK"
