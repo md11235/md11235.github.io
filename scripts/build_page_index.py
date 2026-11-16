@@ -79,7 +79,7 @@ def main():
         if path.suffix.lower() not in EXTENSIONS: continue
         if any(p.startswith(".") or p in EXCLUDE_DIRS or p.startswith("_") for p in path.parts[:-1]): continue
         if path.name in EXCLUDE_NAMES and len(path.parts) == 1: continue
-        if path.name.lower() in ("readme.md", "404.html"): continue
+        if path.name.lower() in ("readme.md", "404.html") or name == "archive/index.md": continue
         full = ROOT / path
         if not full.exists(): continue
         try:
