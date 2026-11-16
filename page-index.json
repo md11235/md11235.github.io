@@ -1,9 +1,16 @@
 {
   "schema": 1,
   "source": "git-last-commit",
-  "generated_at": "2026-11-16T04:20:21.550618+00:00",
-  "count": 69,
+  "generated_at": "2026-11-16T05:23:10.244691+00:00",
+  "count": 70,
   "pages": [
+    {
+      "title": "Linux Extreme × Limitless — 系列实施规范",
+      "url": "/linux-extreme/REQUIREMENTS.html",
+      "path": "linux-extreme/REQUIREMENTS.md",
+      "updated_at": "2026-11-16T13:23:01+08:00",
+      "category": "Linux / Systems"
+    },
     {
       "title": "EP001 · 一条命令究竟能有多长？",
       "url": "/linux-extreme/chapters/001-argument-extreme.html",
