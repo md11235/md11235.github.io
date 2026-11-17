@@ -1,0 +1,13 @@
+EP002 — Sparse File / Verification summary
+Date: 2026-11-17 UTC
+Runtime: Linux 6.18.57 x86_64 GNU/Linux; overlayfs; filesystem block size 4096 bytes.
+Execution: timeout 60 bash scripts/ep002.sh (stdout and stderr captured).
+Exit code: 0
+Create: truncate -s 1T (1 TiB = 1099511627776 bytes).
+After truncate: st_blocks=0; disk use=0 B; apparent size=1.0T.
+Read hole at 1 GiB: 16 zero bytes.
+After writing first and last 4096-byte blocks: st_blocks=16 units of 512 bytes = 8192 bytes; du=8.0K.
+Readback: first byte A, hole byte 00, last byte Z.
+Cleanup: EXIT trap removed the temporary directory.
+Notes: allocated bytes vary by filesystem/mount options; per-file st_blocks does not include all filesystem metadata.
+Screenshot: SVG is programmatically rendered from actual saved output, not a literal terminal screenshot.
