@@ -1,0 +1,31 @@
+Linux Extreme / EP002 / SPARSE FILE
+Date (UTC): 2026-11-17T02:04:24Z
+Kernel: Linux 6.18.57 x86_64 GNU/Linux
+Filesystem: overlayfs
+Filesystem block size: 4096 bytes
+Location: /tmp/linux-extreme-ep002.zpM3u9u9
+Target size: 1099511627776 bytes (1 TiB)
+
+$ truncate -s 1T one-tib.bin
+stat size (logical): 1099511627776 bytes
+stat blocks allocated: 0 (units of 512 bytes)
+estimated allocated: 0 bytes
+du apparent: 1.0T
+du disk usage: 0
+
+$ read 16 bytes from the middle of the hole (od -An -tx1)
+ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+$ write 4096 bytes at the first and last 4 KiB of the file
+stat size (logical): 1099511627776 bytes
+stat blocks allocated: 16 (units of 512 bytes)
+estimated allocated: 8192 bytes
+du apparent: 1.0T
+du disk usage: 8.0K
+
+$ check first/last byte and hole byte
+start:    A
+hole:   00
+end:      Z
+
+Experiment finished. Temporary directory removed on exit.
