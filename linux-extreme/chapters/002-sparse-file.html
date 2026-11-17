@@ -19,7 +19,7 @@ bash ep002.sh 2>&amp;1 | tee ep002-output.txt</code></pre>
 <h2>实验实录 · Verified Run</h2>
 <p>2026 年 11 月 17 日，在 <strong>Linux 6.18.57 x86-64 / overlayfs</strong> 上实际运行，进程退出状态为 <strong>0</strong>。下面这张<strong>模拟终端截图由程序使用真实记录的 output.txt 绘制</strong>，不是人工截图；所有数值均可在原始日志中核对。</p>
 <figure><a href="../artifacts/ep002/terminal.svg"><img src="../artifacts/ep002/terminal.svg" alt="EP002 实测终端截图：1 TiB 文件初始占用 0 B，写入首尾各 4 KiB 后磁盘占用 8 KiB，空洞读出零字节"></a><figcaption>源于实际执行日志的终端模拟器渲染 · 点击查看矢量大图</figcaption></figure>
-<div class="links"><a href="../artifacts/ep002/output.txt">原始输出</a><a href="../artifacts/ep002/result-summary.txt">结果摘要</a><a href="../artifacts/ep002/terminal.svg">SVG 截图</a><a href="../scripts/ep002.sh">实验脚本</a><a href="../tools/render-terminal-shot.py">通用截图生成器</a></div>
+<div class="links"><a href="../artifacts/ep002/output.txt">原始输出</a><a href="../artifacts/ep002/result-summary.txt">结果摘要</a><a href="../artifacts/ep002/terminal.svg">SVG 截图</a><a href="../scripts/ep002.sh">实验脚本</a><a href="../tools/render-terminal-shot-v2.py">通用截图生成器</a></div>
 <h2>03 · The Breaking Point</h2>
 <table><thead><tr><th>操作</th><th>文件逻辑大小</th><th>本次实测已分配空间</th></tr></thead><tbody><tr><td>truncate 后</td><td>1 TiB</td><td>0 B</td></tr><tr><td>首尾分别写入 4 KiB</td><td>1 TiB</td><td>8192 B（8 KiB）</td></tr></tbody></table>
 <p><code>du --apparent-size -h</code> 报告 1.0T，而普通 <code>du -h</code> 最初报告 0，写入后报告 8.0K。这两个统计值回答了不同的问题。<code>stat -c '%s %b %B'</code> 给出逻辑长度、分配块数和块单位：本次后两者为 16 × 512 字节。</p>
