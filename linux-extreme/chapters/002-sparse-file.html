@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Linux Extreme EP002：1 TiB 稀疏文件为什么只占 8 KiB？真实执行、终端截图、内核原理与可复现脚本。"><title>EP002 · 1 TiB 文件只占 8 KiB？ | Linux Extreme</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans SC",sans-serif}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 90% 0,#173448,#0a101b 50%,#070b13);color:#ebf1f9;line-height:1.85}main{max-width:940px;padding:38px 22px 90px;margin:auto}nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}a{color:#7de8c7;text-underline-offset:4px}a:hover{color:white}.tag{color:#73ecca;letter-spacing:.17em;font-size:.77rem;font-weight:700;margin-top:60px}h1{font-size:clamp(2.3rem,6vw,4.2rem);line-height:1.23;margin:16px 0;letter-spacing:-.05em}h1 em{font-style:normal;color:#7de8c7}h2{color:#8fe9d0;line-height:1.3;margin-top:65px;font-size:1.65rem}h3{margin-top:30px}p,li{color:#cbd7e8}.lead{font-size:1.13rem;color:#b5c6d9}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:32px 0}.metric{padding:17px;background:#132338;border:1px solid #2a465b;border-radius:14px}.metric small{display:block;color:#9cacc4;font-size:.78rem}.metric b{display:block;color:#a1f6dd;font-size:1.6rem}.warn{border-left:4px solid #efc381;background:#28231d;padding:12px 18px}.warn p{margin:0;color:#f0dfbc}code{font-family:ui-monospace,Consolas,monospace}code:not(pre code){background:#1a2c41;border-radius:4px;padding:2px 5px;color:#b1ffdc}pre{overflow:auto;border-radius:14px;background:#101c2d;border:1px solid #2a4159;padding:18px;font-size:.91rem;line-height:1.65}figure{margin:25px 0}figure img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid #35516b}figcaption{color:#91a7c2;font-size:.83rem;margin-top:8px}.links{display:flex;gap:9px;flex-wrap:wrap}.links a{background:#152b40;border:1px solid #37645e;border-radius:8px;text-decoration:none;padding:8px 12px;font-size:.89rem}.diagram{display:grid;grid-template-columns:1fr 5fr 1fr;gap:6px;margin:26px 0}.diagram div{border:1px solid #4b687a;border-radius:9px;background:#63e3ba;padding:13px 4px;text-align:center;color:#081b26;font-weight:700}.diagram div:nth-child(2){background:#182d42;color:#a9c3d4;border-style:dashed}table{border-collapse:collapse;width:100%}th,td{padding:12px 8px;border-bottom:1px solid #35485d;text-align:left}th{color:#a4f8da}footer{margin-top:70px;border-top:1px solid #32455a;padding-top:22px;color:#a5b6c9}@media(max-width:650px){.metrics{grid-template-columns:repeat(2,1fr)}h2{margin-top:45px}.diagram{font-size:.75rem}}
+</style></head><body><main><nav><a href="../">← 专题首页</a><a href="001-argument-extreme.html">上一篇 EP001</a></nav>
+<div class="tag">LINUX EXTREME / EP002 / FILESYSTEM EXTREME</div>
+<h1>1 TiB 的文件，<br><em>为什么只占 8 KiB？</em></h1>
+<p class="lead">假设磁盘根本没有 1 TiB 空闲空间，Linux 能不能创建一个大小为 1 TiB 的文件？答案藏在逻辑长度、数据块分配与「文件空洞」的区别中。</p>
+<div class="metrics"><div class="metric"><small>逻辑大小</small><b>1 TiB</b></div><div class="metric"><small>初始分配</small><b>0 B</b></div><div class="metric"><small>实写数据</small><b>8 KiB</b></div><div class="metric"><small>最终分配</small><b>8 KiB</b></div></div>
+<h2>01 · The Challenge</h2>
+<p>本次挑战使用 <code>truncate -s 1T one-tib.bin</code>。GNU coreutils 的 <code>1T</code> 表示 2⁴⁰ 字节，即 1 TiB。对于支持稀疏文件的文件系统，扩展文件长度时可以不为中间未写入的数据区分配物理块。</p>
+<div class="warn"><p>安全边界：只设置逻辑长度并写入 8 KiB。不会执行写满 1 TiB 或提前为 1 TiB 分配磁盘块的操作。请使用专用测试环境。</p></div>
+<h2>02 · The Experiment</h2>
+<p>下载 <a href="../scripts/ep002.sh">实验脚本 ep002.sh</a>，在 Linux 环境运行：</p>
+<pre><code>bash ep002.sh
+# 在本地保留标准输出与错误输出
+bash ep002.sh 2>&amp;1 | tee ep002-output.txt</code></pre>
+<p>脚本通过 <code>mktemp</code> 建立独立目录，并通过 <code>trap ... EXIT</code> 自动清理；按顺序执行长度设置、块数统计、空洞读取以及首尾各 4096 字节的真实写入和校验。</p>
+<h2>实验实录 · Verified Run</h2>
+<p>2026 年 11 月 17 日，在 <strong>Linux 6.18.57 x86-64 / overlayfs</strong> 上实际运行，进程退出状态为 <strong>0</strong>。下面这张<strong>模拟终端截图由程序使用真实记录的 output.txt 绘制</strong>，不是人工截图；所有数值均可在原始日志中核对。</p>
+<figure><a href="../artifacts/ep002/terminal.svg"><img src="../artifacts/ep002/terminal.svg" alt="EP002 实测终端截图：1 TiB 文件初始占用 0 B，写入首尾各 4 KiB 后磁盘占用 8 KiB，空洞读出零字节"></a><figcaption>源于实际执行日志的终端模拟器渲染 · 点击查看矢量大图</figcaption></figure>
+<div class="links"><a href="../artifacts/ep002/output.txt">原始输出</a><a href="../artifacts/ep002/result-summary.txt">结果摘要</a><a href="../artifacts/ep002/terminal.svg">SVG 截图</a><a href="../scripts/ep002.sh">实验脚本</a><a href="../tools/render-terminal-shot.py">通用截图生成器</a></div>
+<h2>03 · The Breaking Point</h2>
+<table><thead><tr><th>操作</th><th>文件逻辑大小</th><th>本次实测已分配空间</th></tr></thead><tbody><tr><td>truncate 后</td><td>1 TiB</td><td>0 B</td></tr><tr><td>首尾分别写入 4 KiB</td><td>1 TiB</td><td>8192 B（8 KiB）</td></tr></tbody></table>
+<p><code>du --apparent-size -h</code> 报告 1.0T，而普通 <code>du -h</code> 最初报告 0，写入后报告 8.0K。这两个统计值回答了不同的问题。<code>stat -c '%s %b %B'</code> 给出逻辑长度、分配块数和块单位：本次后两者为 16 × 512 字节。</p>
+<div class="diagram"><div>AAAA…<br>首块</div><div>HOLE：逻辑上存在、读取为零、尚未分配数据块</div><div>ZZZZ…<br>末块</div></div>
+<p>在偏移量 1 GiB 读取连续 16 个字节，得到 16 个 <code>00</code>；随后读回首字节 <code>A</code>、中间字节 <code>00</code> 和末字节 <code>Z</code>。数据正确，空洞也正确。</p>
+<h2>04 · Under the Hood</h2>
+<h3>st_size 与 i_size：逻辑长度</h3>
+<p>普通文件在内核文件系统层有长度信息；当 <code>truncate</code> 扩展它时，这个数值可以在没有写入全部对应数据的情况下更新。文件末尾的位置与磁盘块的分配数量相互独立。</p>
+<h3>st_blocks：已分配空间</h3>
+<p><code>stat</code> 的 <code>st_blocks</code> 以 512 字节为单位描述分配量；不要把它等同于整个文件系统的全部元数据开销。文件系统类型、压缩、延迟分配、配额、快照与写时复制可能影响观察到的值。</p>
+<h3>Hole：空洞为什么能读出 0？</h3>
+<p>文件中的未写入区域可以没有实际数据块映射。对该区域的读取按照文件语义表现为零字节。Linux 的 <code>lseek(SEEK_DATA/SEEK_HOLE)</code> 可以探索数据区与空洞，但文件系统支持和报告粒度存在差异。</p>
+<p>参考手册：<a href="https://man7.org/linux/man-pages/man2/truncate.2.html">truncate(2)</a> · <a href="https://man7.org/linux/man-pages/man2/stat.2.html">stat(2)</a> · <a href="https://man7.org/linux/man-pages/man2/lseek.2.html">lseek(2)</a> · <a href="https://www.gnu.org/software/coreutils/manual/html_node/truncate-invocation.html">GNU truncate</a>。</p>
+<h2>05 · Beyond the Limit</h2>
+<p>稀疏文件的“低占用”可能在普通复制或恢复时消失：原先未分配的区域可能被写成真实零字节，导致实际存储需求激增。GNU <code>cp --sparse=always</code> 和 <code>tar --sparse</code> 可以帮助保留空洞，但需要理解目标文件系统、归档格式和工具实现。</p>
+<pre><code># 安全的小规模复制实验（只有 64 MiB 逻辑长度）
+truncate -s 64M sample.bin
+printf X | dd of=sample.bin bs=1 seek=0 conv=notrunc status=none
+cp --sparse=always sample.bin copy.bin
+stat -c '%n: size=%s blocks=%b unit=%B' sample.bin copy.bin
+rm -f -- sample.bin copy.bin</code></pre>
+<p><code>fallocate -l 1T</code> 通常会预分配空间，不能用作本挑战中的“几乎不占磁盘”的替代命令。千万别在存储受限的机器上未经评估就尝试。</p>
+<h2>06 · The Next Question</h2>
+<p>当文件名、逻辑长度和实际数据块可以独立变化时，又一个谜题出现了：<strong>为什么 Linux 中一个已经被删除的文件，仍有可能占据磁盘空间？</strong> 下次我们继续寻找 inode 与文件描述符的边界。</p>
+<footer><a href="../">← 返回 Linux Extreme</a> · <a href="001-argument-extreme.html">EP001：命令参数极限</a><p style="font-size:.83rem">Linux Extreme × Limitless · 真实实验 · 自动生成终端截图 · 可复现脚本</p></footer>
+</main></body></html>
