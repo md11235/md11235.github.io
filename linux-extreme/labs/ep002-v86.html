@@ -134,7 +134,7 @@ function run(){
  runInfo={id,date:new Date().toISOString(),output:"",exitCode:null};
  checks.textContent="";summary.textContent="等待 Linux 实验数据…";setStep(3,"active");setStep(4,"");setStep(5,"");controls();
  say("正在发送实验到 Linux…");
- const command="printf '\\n"+startMarker+"\\n'; "+labCommands.join(" ").replaceAll("\n"," ")+"; printf '\\n"+endMarker+"%s\\n' \"$?\"";
+ const command="printf '\\n"+startMarker+"\\n'; "+labCommands.join("\n")+"; printf '\\n"+endMarker+"%s\\n' \"$?\"";
  try{sendRaw(command)}catch(e){phase="ready";say("无法发送命令："+e.message);controls();return}
  runTimer=setTimeout(()=>{if(phase==="running"&&runInfo&&runInfo.id===id){runInfo.output=capture;runInfo.exitCode="timeout";phase="ready";setStep(4,"fail");say("实验超时（60 秒），请查看终端输出后重试。");evaluate(runInfo);controls()}},60000);
 }
