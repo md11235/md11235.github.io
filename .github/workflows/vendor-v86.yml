@@ -1,0 +1,70 @@
+name: Vendor v86 assets for Linux Extreme
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-v86.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vendor-v86-assets
+  cancel-in-progress: false
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Download verified v86 runtime and Linux image
+        shell: bash
+        run: |
+          set -euo pipefail
+          dest="linux-extreme/vendor/v86"
+          mkdir -p "$dest"
+          fetch() {
+            local url="$1" file="$2"
+            curl --fail --location --retry 5 --retry-delay 2 --connect-timeout 20 --max-time 240 --silent --show-error "$url" -o "$dest/$file"
+            test -s "$dest/$file"
+            printf '%-32s %10s bytes\n' "$file" "$(wc -c < "$dest/$file")"
+          }
+          # JS + WASM are from the same published release; firmware + Buildroot image
+          # follow v86's upstream serial example.
+          fetch 'https://cdn.jsdelivr.net/npm/v86@0.5.472/build/libv86.js' 'libv86.js'
+          fetch 'https://cdn.jsdelivr.net/npm/v86@0.5.472/build/v86.wasm' 'v86.wasm'
+          fetch 'https://raw.githubusercontent.com/copy/v86/master/bios/seabios.bin' 'seabios.bin'
+          fetch 'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin' 'vgabios.bin'
+          fetch 'https://i.copy.sh/buildroot-bzimage68.bin' 'buildroot-bzimage68.bin'
+          # Fail on truncated files, text error pages, or mismatched magic.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("linux-extreme/vendor/v86")
+          sizes={"libv86.js":100000,"v86.wasm":100000,"seabios.bin":10000,"vgabios.bin":10000,"buildroot-bzimage68.bin":1000000}
+          for name,minimum in sizes.items():
+              data=(p/name).read_bytes()
+              assert len(data)>minimum,(name,len(data))
+              assert not data[:64].lower().lstrip().startswith((b"<html",b"<!doctype")),name
+          assert (p/"v86.wasm").read_bytes()[:4]==b"\0asm","Invalid WASM header"
+          img=(p/"buildroot-bzimage68.bin").read_bytes()
+          assert img[0x202:0x206]==b"HdrS","Invalid Linux bzImage header"
+          print("All five files passed length and signature checks.")
+          PY
+          (cd "$dest" && sha256sum libv86.js v86.wasm seabios.bin vgabios.bin buildroot-bzimage68.bin > SHA256SUMS)
+
+      - name: Commit assets into GitHub Pages source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add linux-extreme/vendor/v86
+          if ! git diff --cached --quiet; then
+            git commit -m 'Vendor v86 runtime, BIOS and Linux kernel image for same-origin lab'
+            git push origin HEAD:master
+          else
+            echo 'All v86 files already committed'
+          fi
