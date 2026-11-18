@@ -21,17 +21,17 @@
 <text x="37" y="546" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#ffd38c">du apparent: 1.0T</text>
 <text x="37" y="582" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4">du disk usage: 0</text>
 <text x="37" y="618" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4"></text>
-<text x="37" y="654" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#80efd1">$ read 16 bytes from the middle of the hole (od -An -tx1)</text>
+<text x="37" y="654" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#80efd1"># read 16 bytes from the middle of the hole (od -An -tx1)</text>
 <text x="37" y="690" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4"> 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</text>
 <text x="37" y="726" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4"></text>
-<text x="37" y="762" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#80efd1">$ write 4096 bytes at the first and last 4 KiB of the file</text>
+<text x="37" y="762" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#80efd1"># write 4096 bytes at the first and last 4 KiB of the file</text>
 <text x="37" y="798" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#ffd38c">stat size (logical): 1099511627776 bytes</text>
 <text x="37" y="834" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4">stat blocks allocated: 16 (units of 512 bytes)</text>
 <text x="37" y="870" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#ffd38c">estimated allocated: 8192 bytes</text>
 <text x="37" y="906" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#ffd38c">du apparent: 1.0T</text>
 <text x="37" y="942" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#ffd38c">du disk usage: 8.0K</text>
 <text x="37" y="978" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4"></text>
-<text x="37" y="1014" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#80efd1">$ check first/last byte and hole byte</text>
+<text x="37" y="1014" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#80efd1"># check first/last byte and hole byte</text>
 <text x="37" y="1050" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4">start:    A</text>
 <text x="37" y="1086" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4">hole:   00</text>
 <text x="37" y="1122" font-family="DejaVu Sans Mono,monospace" font-size="21" fill="#e4eaf4">end:      Z</text>
