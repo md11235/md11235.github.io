@@ -5,7 +5,7 @@
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{background:#090f1b;color:#e5edf7;font:14px/1.6 system-ui,-apple-system,sans-serif;margin:0;padding:16px}
 h2{font-size:1.15rem;margin:0 0 10px}button{background:#17453d;color:#c1ffdf;border:1px solid #409179;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:650}
-button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#17283f;border-color:#46607c;color:#d4e6f7}
+button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#17283f;border-color:#46607c;color:#d4e6f7}.cache-info{color:#8fe6c8;font-size:.82rem;margin:4px 0 10px}#cmd:focus{outline:2px solid #62d9b5;outline-offset:1px}
 #steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-bottom:16px}.step{padding:9px 5px;text-align:center;border-radius:8px;background:#152034;border:1px solid #30425d;font-size:.82rem;color:#a7b8cd}
 .step.active{border-color:#68e3be;color:#d1ffeb}.step.done{background:#153e36;border-color:#398975;color:#a9f3db}.step.fail{background:#45262b;border-color:#c76367;color:#ffccd0}
 .controls{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.status{color:#c3d4e9;min-height:26px}
@@ -24,13 +24,13 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 <div class="controls">
  <button id="boot">启动 Linux</button>
  <button id="run" disabled>运行 EP002 · 64 MiB</button>
- <button id="restart" class="secondary" disabled>重置</button>
+ <button id="restart" class="secondary" disabled>重置</button><button id="purge" class="secondary">清除 Linux 资源缓存</button>
 </div>
-<p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p>
+<p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
 <textarea id="terminal" readonly spellcheck="false" aria-label="真实 Linux 串口控制台">Linux 串口输出将显示在此处。
 </textarea>
 <div class="controls">
- <input id="cmd" placeholder="可输入 Linux 命令，例如 uname -a" disabled aria-label="Linux 命令">
+ <input id="cmd" placeholder="输入 Linux 命令，例如 uname -a（Linux 就绪后发送）" aria-label="Linux 命令" autocomplete="off" spellcheck="false">
  <button id="send" class="secondary" disabled>发送命令</button>
  <button id="download" class="secondary" disabled>保存本次结果</button>
 </div>
@@ -40,14 +40,67 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <div class="results" id="checks" aria-live="polite"></div>
 </div>
 <p class="note">参考结果是对稀疏文件原理的预测：逻辑长度应为 67,108,864 B，空洞应读出 00，写入首尾后能读回 41（A）和 5a（Z）。磁盘占用由 du -k 读取，以 KiB 为单位；文件系统不同可能影响结果，因此只判断增长趋势，不强制等于 8 KiB。此处运行 64 MiB，不会对虚拟机预分配 1 TiB 数据。</p>
-<p class="note">技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次访问需要从本站下载内核、BIOS 和模拟器，后续可利用浏览器缓存。浏览器兼容性、镜像启动及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
+<p class="note">技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次从本站下载 5 个依赖文件后，可通过浏览器 Cache Storage 持久缓存；后续启动优先使用本地文件（浏览器可能因空间不足自动清理缓存）。浏览器兼容性、镜像启动及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
 const bootBtn=$("boot"),runBtn=$("run"),restartBtn=$("restart"),sendBtn=$("send"),downloadBtn=$("download");
-const statusEl=$("status"),terminal=$("terminal"),cmd=$("cmd"),checks=$("checks"),summary=$("summary");
+const statusEl=$("status"),terminal=$("terminal"),cmd=$("cmd"),checks=$("checks"),summary=$("summary"),cacheStatus=$("cache-status"),purgeBtn=$("purge");
 let vm=null,phase="idle",bootToken=0,runCount=0,tail="",line="",capture="",capturing=false,runInfo=null,runTimer=null,bootTimer=null,readyProbe=false,bufferLimit=240000;
 const startMarker="__LX2_BEGIN__",endMarker="__LX2_END__:",readyMarker="__LX2_READY__";
+
+const assetNames=["libv86.js","v86.wasm","seabios.bin","vgabios.bin","buildroot-bzimage68.bin"];
+const cacheName="linux-extreme-v86-assets-v1-20261118";
+let cacheReadyPromise=null;
+function assetURL(name){return new URL("../vendor/v86/"+name,location.href).href}
+async function ensureCacheSupport(){
+ if(!("serviceWorker" in navigator)||!("caches" in window)){
+  cacheStatus.textContent="缓存不可用：浏览器未提供 Service Worker / Cache Storage；将使用普通 HTTP 缓存。";
+  return false;
+ }
+ try{
+  await navigator.serviceWorker.register("../sw.js",{scope:"../"});
+  await navigator.serviceWorker.ready;
+  if(!navigator.serviceWorker.controller){
+   await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{navigator.serviceWorker.removeEventListener("controllerchange",changed);reject(new Error("等待控制权超时"))},8000);
+    function changed(){if(navigator.serviceWorker.controller){clearTimeout(timer);navigator.serviceWorker.removeEventListener("controllerchange",changed);resolve()}}
+    navigator.serviceWorker.addEventListener("controllerchange",changed);
+    changed();
+   });
+  }
+  return true;
+ }catch(e){
+  cacheStatus.textContent="缓存服务不可用（"+String(e.message||e)+"）；仍可联网启动。";
+  return false;
+ }
+}
+async function cacheInventory(){
+ if(!("caches" in window))return;
+ try{
+  const cache=await caches.open(cacheName);
+  let count=0;
+  for(const name of assetNames)if(await cache.match(assetURL(name)))count++;
+  cacheStatus.textContent="Linux 资源缓存："+count+"/"+assetNames.length+" 个文件"+(count===assetNames.length?" · 下次启动优先读取本地副本":" · 首次启动将逐项下载");
+ }catch(e){cacheStatus.textContent="无法读取缓存状态："+String(e.message||e)}
+}
+async function prepareAssets(){
+ const supported=await ensureCacheSupport();
+ if(!supported)return;
+ const cache=await caches.open(cacheName);
+ for(let i=0;i<assetNames.length;i++){
+  const name=assetNames[i],url=assetURL(name);
+  const cached=await cache.match(url);
+  if(cached){cacheStatus.textContent="准备虚拟机文件："+(i+1)+"/5 · "+name+"（已缓存）";continue}
+  cacheStatus.textContent="首次下载虚拟机文件："+(i+1)+"/5 · "+name;
+  const response=await fetch(url,{cache:"no-cache"});
+  if(!response.ok)throw new Error(name+" 下载失败：HTTP "+response.status);
+  // Cache Storage is quota-limited. Do not block online boot if persistence fails.
+  try{await cache.put(url,response.clone())}catch(e){cacheStatus.textContent="缓存容量不足，继续在线加载："+name}
+ }
+ await cacheInventory();
+}
+
 function say(v){statusEl.textContent=v}
 function setStep(n,state){const e=$("s"+n);e.className="step"+(state?" "+state:"")}
 function resetSteps(){for(let n=1;n<=5;n++)setStep(n,n===1?"active":"")}
@@ -63,7 +116,7 @@ async function loadWasm(){
 }
 function loadScript(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error("无法加载模拟器脚本"));document.head.append(script)})}
 function sendRaw(s){if(!vm)throw new Error("Linux 尚未启动");vm.serial0_send(s+"\n")}
-function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready;sendBtn.disabled=!ready;cmd.disabled=!ready;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!runInfo;runBtn.textContent=running?"实验执行中…":"运行 EP002 · 64 MiB"}
+function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready;sendBtn.disabled=!ready;cmd.disabled=false;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!runInfo;runBtn.textContent=running?"实验执行中…":"运行 EP002 · 64 MiB"}
 function probe(){if(readyProbe||phase!=="booting")return;readyProbe=true;say("Linux 已出现 shell 提示符，正在验证命令交互…");sendRaw("printf '\\n"+readyMarker+"\\n'")}
 function onLine(v){
  const s=v.trim();
@@ -98,6 +151,8 @@ async function start(){
  readyProbe=false;tail="";line="";runInfo=null;checks.textContent="";summary.textContent="Linux 启动中…";
  bootTimer=setTimeout(()=>{if(bootToken===thisToken&&phase==="booting")failed("Linux 在 120 秒内未完成 shell 握手，请重置并重试。")},120000);
  try{
+  await prepareAssets();
+  if(thisToken!==bootToken)return;
   if(typeof V86!=="function")await loadScript("../vendor/v86/libv86.js");
   if(thisToken!==bootToken)return;
   if(typeof V86!=="function")throw new Error("V86 运行库未初始化");
@@ -188,13 +243,23 @@ async function restart(){
  resetSteps();controls();terminal.value="";checks.textContent="";summary.textContent="重置完成，可以重新启动 Linux。";say("已重置，点击“启动 Linux”。");
 }
 bootBtn.addEventListener("click",start);runBtn.addEventListener("click",run);restartBtn.addEventListener("click",restart);
-function manual(){const s=cmd.value.trim();if(phase!=="ready"||!s)return;try{sendRaw(s);cmd.value=""}catch(e){say(e.message)}}
+function manual(){const s=cmd.value.trim();if(!s)return;if(phase!=="ready"){say(phase==="running"?"自动实验运行中，完成后才能发送命令。":"命令已保留；启动 Linux 并等待就绪后可发送。");return}try{sendRaw(s);cmd.value="";cmd.focus();say("命令已发送至 Linux，执行结果显示在上方终端。")}catch(e){say("发送失败："+String(e.message||e))}}
 sendBtn.addEventListener("click",manual);cmd.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();manual()}});
 downloadBtn.addEventListener("click",()=>{
  if(!runInfo)return;
  const blob=new Blob(["EP002 browser Linux experiment\n"+runInfo.date+"\nexitCode="+runInfo.exitCode+"\n\n"+runInfo.output],{type:"text/plain;charset=utf-8"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ep002-browser-linux-result.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 });
+purgeBtn.addEventListener("click",async()=>{
+ purgeBtn.disabled=true;
+ try{
+  if(!("caches" in window))throw new Error("该浏览器没有 Cache Storage");
+  await caches.delete(cacheName);
+  cacheStatus.textContent="已清除 Linux 运行资源缓存。下次启动将重新下载。";
+ }catch(e){cacheStatus.textContent="清除失败："+String(e.message||e)}
+ finally{purgeBtn.disabled=false}
+});
+cacheReadyPromise=ensureCacheSupport().then(cacheInventory);
 controls();
 </script>
 </body></html>
