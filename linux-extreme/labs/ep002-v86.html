@@ -105,7 +105,7 @@ async function start(){
   const wasmObject=await loadWasm();
   if(thisToken!==bootToken)return;
   vm=new V86({
-   wasm_path:wasmObject,
+   wasm_fn:async imports=>(await WebAssembly.instantiate(wasmObject,imports)).exports,
    memory_size:128*1024*1024,
    vga_memory_size:2*1024*1024,
    bios:{url:"https://copy.sh/v86/bios/seabios.bin"},
