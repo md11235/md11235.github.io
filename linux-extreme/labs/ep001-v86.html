@@ -188,6 +188,8 @@ const labCommands=[
  "  grep -l NEEDLE actual.txt > /tmp/lx_ep001/base.out 2>/tmp/lx_ep001/base.err",
  "  printf 'LX_BASELINE='; cat /tmp/lx_ep001/base.out",
  "  pad=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+ "  old_stack=$(ulimit -s 2>/dev/null || printf unknown)",
+ "  if ulimit -s 256 2>/dev/null; then printf 'LX_STACK_KIB=256\\n'; else printf 'LX_STACK_KIB=unchanged\\n'; fi",
  "  set --",
  "  i=0",
  "  lx_hit=0",
@@ -202,6 +204,7 @@ const labCommands=[
  "  done",
  "  printf 'LX_TESTED=%s\\n' \"$lx_tested\"",
  "  printf 'LX_E2BIG=%s\\n' \"$lx_hit\"",
+ "  if [ \"$old_stack\" != unknown ]; then ulimit -s \"$old_stack\" 2>/dev/null || true; fi",
  "  mkdir -p /tmp/lx_ep001/batch",
  "  printf 'NEEDLE\\n' > /tmp/lx_ep001/batch/a.txt",
  "  printf 'NEEDLE\\n' > /tmp/lx_ep001/batch/b.txt",
@@ -228,7 +231,7 @@ function field(output,key){const m=output.match(new RegExp("(?:^|\\n)"+key+"=\\s
 function evaluate(result){
  const o=result.output;
  const kernel=field(o,"LX_KERNEL"),baseline=field(o,"LX_BASELINE"),tested=field(o,"LX_TESTED");
- const hit=field(o,"LX_E2BIG"),batch=field(o,"LX_BATCH"),cleanup=field(o,"LX_CLEANUP"),reason=field(o,"LX_ERROR");
+ const hit=field(o,"LX_E2BIG"),batch=field(o,"LX_BATCH"),cleanup=field(o,"LX_CLEANUP"),reason=field(o,"LX_ERROR"),stack=field(o,"LX_STACK_KIB");
  const numeric=x=>x!==null&&/^\d+$/.test(x);
  const trials=[256,512,1024,2048,4096].map(n=>[n,field(o,"LX_TRIAL_"+n)]).filter(x=>x[1]!==null);
  const last=trials.length?trials[trials.length-1]:null;
@@ -251,7 +254,7 @@ function evaluate(result){
  const passCount=items.filter(x=>x[3]).length;
  const all=passCount===6&&!reason&&result.exitCode==="0";
  const interpretation=hit==="1"?"已观察到 Argument list too long（E2BIG）。":"在所测参数范围内未观察到 E2BIG；内核的限制可能更高。";
- summary.textContent="完成 "+passCount+"/6 项检查。"+interpretation+" 最后一次测试："+(last?last[0]+" 项 → "+last[1]:"无记录")+(reason?"；"+reason:"");
+ summary.textContent="完成 "+passCount+"/6 项检查。栈软限制："+(stack||"未取得")+" KiB。"+interpretation+" 最后一次测试："+(last?last[0]+" 项 → "+last[1]:"无记录")+(reason?"；"+reason:"");
  setStep(5,all?"done":"fail");
  say(all?"已完成 Linux 参数压力测试和分批处理验证。":"结果不完整，请检查终端和工具支持情况。");
 }
