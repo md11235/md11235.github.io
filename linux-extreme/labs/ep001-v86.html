@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EP001 · Live Linux Lab · 自动验证</title>
+<link rel="stylesheet" href="../vendor/xterm/xterm.css"><title>EP001 · Live Linux Lab · 自动验证</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{background:#090f1b;color:#e5edf7;font:14px/1.6 system-ui,-apple-system,sans-serif;margin:0;padding:16px}
 h2{font-size:1.15rem;margin:0 0 10px}button{background:#17453d;color:#c1ffdf;border:1px solid #409179;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:650}
@@ -9,7 +9,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 #steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-bottom:16px}.step{padding:9px 5px;text-align:center;border-radius:8px;background:#152034;border:1px solid #30425d;font-size:.82rem;color:#a7b8cd}
 .step.active{border-color:#68e3be;color:#d1ffeb}.step.done{background:#153e36;border-color:#398975;color:#a9f3db}.step.fail{background:#45262b;border-color:#c76367;color:#ffccd0}
 .controls{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.status{color:#c3d4e9;min-height:26px}
-#terminal{width:100%;height:310px;resize:vertical;overflow:auto;border:1px solid #354c65;border-radius:12px;padding:12px;background:#060c14;color:#d5f9e5;font:12.5px/1.5 ui-monospace,Consolas,monospace;white-space:pre}
+#terminal{width:100%;height:330px;overflow:hidden;border:1px solid #354c65;border-radius:12px;padding:10px;background:#060c14}.xterm{height:100%}.xterm-viewport{border-radius:5px}
 #cmd{display:block;position:relative;z-index:5;pointer-events:auto;user-select:text;-webkit-user-select:text;touch-action:manipulation;background:#122034;border:1px solid #41607d;border-radius:8px;padding:10px;color:#fff;min-width:180px;min-height:44px;flex:1;font:14px/1.5 ui-monospace,Consolas,monospace;resize:vertical}#cmd:focus{outline:2px solid #62d9b5;outline-offset:1px}#editor-row{position:relative;z-index:5;isolation:isolate}
 .panel{background:#122035;border:1px solid #314964;border-radius:12px;padding:14px;margin-top:13px}
 .results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.check{background:#192a3f;border:1px solid #334b60;border-radius:8px;padding:9px}.check b{display:block}.check small{display:block;color:#9fb0c7}.pass{border-color:#3b9c7d}.fail{border-color:#ca7373}
@@ -27,8 +27,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <button id="restart" class="secondary" disabled>重置</button><button id="purge" class="secondary">清除 Linux 资源缓存</button>
 </div>
 <p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
-<textarea id="terminal" readonly spellcheck="false" aria-label="真实 Linux 串口控制台">Linux 串口输出将在这里显示。
-</textarea>
+<div id="terminal" role="region" aria-label="支持 ANSI 颜色与控制序列的 Linux 终端"></div>
 <div class="controls" id="editor-row">
  <textarea id="cmd" rows="2" placeholder="在此输入 Linux 命令，例如 uname -a。按 Enter 发送，Shift+Enter 换行。" aria-label="可编辑的 Linux 命令输入区" autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="0"></textarea>
  <button id="send" class="secondary" type="button">发送命令</button>
@@ -46,6 +45,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 const $=id=>document.getElementById(id);
 const bootBtn=$("boot"),runBtn=$("run"),restartBtn=$("restart"),sendBtn=$("send"),downloadBtn=$("download");
 const statusEl=$("status"),terminal=$("terminal"),cmd=$("cmd"),checks=$("checks"),summary=$("summary"),cacheStatus=$("cache-status"),purgeBtn=$("purge");
+let term=null,fitAddon=null,terminalData="",pendingText="",flushScheduled=false,decoder=new TextDecoder("utf-8");
 let vm=null,phase="idle",bootToken=0,runCount=0,tail="",line="",capture="",capturing=false,runInfo=null,runTimer=null,bootTimer=null,readyProbe=false,bufferLimit=240000;
 const startMarker="__LX1_BEGIN__",endMarker="__LX1_END__:",readyMarker="__LX1_READY__";
 
@@ -104,7 +104,21 @@ async function prepareAssets(){
 function say(v){statusEl.textContent=v}
 function setStep(n,state){const e=$("s"+n);e.className="step"+(state?" "+state:"")}
 function resetSteps(){for(let n=1;n<=5;n++)setStep(n,n===1?"active":"")}
-function append(s){terminal.value+=s;if(terminal.value.length>bufferLimit)terminal.value=terminal.value.slice(-bufferLimit);terminal.scrollTop=terminal.scrollHeight}
+function flushTerminal(){flushScheduled=false;if(term&&pendingText){term.write(pendingText);pendingText=""}}
+function append(s){terminalData=(terminalData+s).slice(-bufferLimit);pendingText+=s;if(!flushScheduled){flushScheduled=true;requestAnimationFrame(flushTerminal)}}
+async function ensureTerminal(){
+ if(term)return;
+ if(!window.Terminal)await loadScript("../vendor/xterm/xterm.js");
+ if(!window.FitAddon)await loadScript("../vendor/xterm/addon-fit.js");
+ if(!window.Terminal)throw new Error("终端核心 xterm.js 无法加载");
+ term=new window.Terminal({cols:100,rows:20,convertEol:false,scrollback:5000,fontSize:14,fontFamily:"ui-monospace,Consolas,monospace",cursorBlink:true,theme:{background:"#060c14",foreground:"#d5f9e5",cursor:"#75efce"}});
+ term.open(terminal);
+ if(window.FitAddon&&window.FitAddon.FitAddon){fitAddon=new window.FitAddon.FitAddon();term.loadAddon(fitAddon);fitAddon.fit()}
+ term.onData(data=>{if(vm&&phase==="ready")vm.serial0_send(data)});
+ term.write("Linux Extreme / v86 serial console\\r\\n");
+ if(typeof ResizeObserver!=="undefined"&&fitAddon){new ResizeObserver(()=>{try{fitAddon.fit()}catch(e){}}).observe(terminal)}
+}
+
 async function loadWasm(){
  const url="../vendor/v86/v86.wasm";
  let response;
@@ -135,7 +149,7 @@ function onLine(v){
  }
 }
 function onByte(byte){
- const c=String.fromCharCode(byte);if(c==="\r")return;append(c);
+ const c=String.fromCharCode(byte);append(decoder.decode(Uint8Array.of(byte),{stream:true}));if(c==="\r")return;
  tail=(tail+c).slice(-160);
  if(c==="\n"){onLine(line);line=""}else if(line.length<8000)line+=c;else line=line.slice(-4000)+c;
  if(phase==="booting"&&!readyProbe&&/(~% |(?:^|[\r\n])[#$] )$/.test(tail))probe();
@@ -147,10 +161,11 @@ function failed(reason){
 }
 async function start(){
  if(phase!=="idle")return;
- const thisToken=++bootToken;phase="booting";resetSteps();controls();terminal.value="";say("加载 v86 WebAssembly 和 Linux 内核…");
+ const thisToken=++bootToken;phase="booting";resetSteps();controls();terminalData="";pendingText="";if(term)term.clear();say("加载 v86 WebAssembly 和 Linux 内核…");
  readyProbe=false;tail="";line="";runInfo=null;checks.textContent="";summary.textContent="Linux 启动中…";
  bootTimer=setTimeout(()=>{if(bootToken===thisToken&&phase==="booting")failed("Linux 在 120 秒内未完成 shell 握手，请重置并重试。")},120000);
  try{
+  await ensureTerminal();
   await prepareAssets();
   if(thisToken!==bootToken)return;
   if(typeof V86!=="function")await loadScript("../vendor/v86/libv86.js");
@@ -261,7 +276,7 @@ function evaluate(result){
 async function restart(){
  ++bootToken;clearClocks();const current=vm;vm=null;phase="idle";readyProbe=false;tail="";line="";capturing=false;capture="";runInfo=null;
  try{if(current&&typeof current.destroy==="function")await current.destroy()}catch(e){console.warn(e)}
- resetSteps();controls();terminal.value="";checks.textContent="";summary.textContent="重置完成，可以重新启动 Linux。";say("已重置，点击“启动 Linux”。");
+ resetSteps();controls();terminalData="";pendingText="";if(term)term.clear();checks.textContent="";summary.textContent="重置完成，可以重新启动 Linux。";say("已重置，点击“启动 Linux”。");
 }
 bootBtn.addEventListener("click",start);runBtn.addEventListener("click",run);restartBtn.addEventListener("click",restart);
 function manual(){const s=cmd.value.trim();if(!s)return;if(phase!=="ready"){say(phase==="running"?"自动实验运行中，完成后才能发送命令。":"命令已保留；启动 Linux 并等待就绪后可发送。");return}try{sendRaw(s);cmd.value="";cmd.focus();say("命令已发送至 Linux，执行结果显示在上方终端。")}catch(e){say("发送失败："+String(e.message||e))}}
