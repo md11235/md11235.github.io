@@ -36,3 +36,11 @@ bash scripts/ep002.sh 2>&1 | tee ep002-output.txt
 ```
 
 实测环境 Linux 6.18.57 / overlayfs：truncate 创建逻辑长度 1 TiB 的文件，初始 st_blocks 为 0；首尾各写入 4 KiB 后，stat 报告 8192 字节已分配空间；读回 A、零和 Z；脚本自动清理临时目录。SVG 为真实日志的程序化排版，不是直接终端屏幕截图。PNG 图片随本地实验材料包提供。
+
+## EP002 网页交互实验室（2026-11-18）
+
+- [EP002 页面](chapters/002-sparse-file.html) 现内嵌 [v86 Linux Lab](labs/ep002-v86.html)。
+- 在浏览器中按需启动真实精简 Linux（Buildroot / BusyBox），可自行输入命令，并可触发 64 MiB 稀疏文件实验。浏览器 VM 的结果与原 Linux 1 TiB 实测数据独立。
+- 首次启动下载来自 v86 项目的外部 WebAssembly、BIOS 和 Linux 镜像文件；部署在静态 GitHub Pages，无须维护后端。外部资源可用性、CORS、浏览器与移动设备性能可能影响启动。
+- 已删除文章正文中的截图制作过程介绍。实施规范仍保留证据溯源与不可伪造的要求。
+- 当前实验室属于 beta，需要在真实用户浏览器中完成交互端到端验证；不能仅凭 GitHub 文件存在判断运行成功。
