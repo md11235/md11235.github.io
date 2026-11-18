@@ -64,3 +64,16 @@ bash scripts/ep002.sh 2>&1 | tee ep002-output.txt
 - 浏览器实验室将 JS 与 WASM 固定为 npm v86 `0.5.472`，改由 jsDelivr 加载；先使用浏览器 `fetch` 获取 WASM，检查 HTTP 状态/基本尺寸并编译，再通过 v86 的 `wasm_fn` 接口交给模拟器。这样可展示更准确的资源加载错误，而不依赖 copy.sh 对跨源 WASM 请求的支持。
 - 实验室采用 `tail -c 1` 读取末字节，用块单位读取空洞，避免 64 MiB 的逐字节 `dd skip` 导致执行时间过长。
 - **验证范围**：GitHub 仓库写入和 JS 语法可检查；v86 在用户浏览器的完整启动、远程 BIOS/镜像跨域行为仍需真实浏览器验证。若网络阻止 jsDelivr，仍会报错，不宣称完全离线。
+
+## EP002 v86 完全同源依赖（2026-11-18）
+
+为了避开浏览器跨源加载 BIOS 的 CORS 限制，已使用 GitHub Actions 下载并将运行需要的 5 个文件提交到 `linux-extreme/vendor/v86/`：
+
+- `libv86.js`、`v86.wasm`：v86 npm 包 `0.5.472`
+- `seabios.bin`、`vgabios.bin`：上游 v86 项目 BIOS 文件
+- `buildroot-bzimage68.bin`：上游 v86 Buildroot Linux 镜像
+- `SHA256SUMS`：上传时生成的内容散列校验清单
+
+[自动下载工作流](../.github/workflows/vendor-v86.yml) 含文件大小和 WASM/Linux bzImage 签名检查；上传成功对应提交 `e0aa30ce`。实验室现在使用相对路径 `../vendor/v86/`，不再向 jsDelivr、copy.sh 或 i.copy.sh 请求这些运行依赖。GitHub Pages 静态资源均与实验室同源。
+
+**注意**：GitHub 仓库已验证所有文件被提交；目前线上站点和真实浏览器内的 Linux 启动仍需验证。文件格式完整不等于镜像一定可成功启动，也不能保证所有浏览器支持。
