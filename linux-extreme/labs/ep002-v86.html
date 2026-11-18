@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Linux Extreme · EP002 · Browser Linux Lab</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{font:14px/1.6 system-ui,sans-serif;background:#090f1a;color:#e8f0f7;margin:0;padding:16px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}button{background:#163c39;border:1px solid #39846f;color:#baf9dd;padding:8px 13px;border-radius:7px;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}#status{color:#a9b9d0;margin:0 0 12px}#terminal{width:100%;height:390px;background:#070d12;border:1px solid #34465b;border-radius:12px;color:#d6fbe8;resize:vertical;padding:14px;font:13px/1.45 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow:auto}#input{background:#0d1928;color:white;border:1px solid #405368;border-radius:8px;padding:9px;width:min(100%,640px);font:14px monospace}p.note{font-size:12px;color:#a5b8cc}a{color:#84e8cc}
+</style></head><body>
+<strong>V86 / BROWSER LINUX · 实验型交互环境</strong>
+<p id="status" role="status">尚未启动。点击“启动 Linux”后下载虚拟机组件与 Linux 镜像。</p>
+<div class="toolbar"><button id="start">启动 Linux</button><button id="demo" disabled>运行稀疏文件实验</button><button id="reset" disabled>重置虚拟机</button></div>
+<textarea id="terminal" readonly spellcheck="false" aria-label="Linux 串口终端">真实 Linux 串口输出将在这里出现。此窗口不会伪造命令执行结果。
+</textarea>
+<div class="toolbar"><input id="input" placeholder="输入命令，例如 uname -a（回车执行）" aria-label="Linux 命令" disabled><button id="send" disabled>发送命令</button></div>
+<p class="note">使用浏览器内 v86 仿真 x86 硬件，运行精简 Linux（Buildroot/BusyBox）；不是远程服务器，也不是 JavaScript 伪终端。默认实验限制为 64 MiB。浏览器资源、镜像加载与 32 位文件偏移能力可能影响命令结果。如果启动失败，请下载文章中的原生 Linux 脚本运行。</p>
+<p class="note">实现：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86 项目</a> · 首次启动依赖外部资源，可能需要较长时间。</p>
+<script>
+"use strict";
+const start=document.getElementById('start'),demo=document.getElementById('demo'),reset=document.getElementById('reset'),send=document.getElementById('send'),input=document.getElementById('input'),status=document.getElementById('status'),terminal=document.getElementById('terminal');
+let vm=null,ready=false,tail='',scriptLoaded=false;
+function say(s){status.textContent=s}
+function append(s){terminal.value+=s;terminal.scrollTop=terminal.scrollHeight}
+function loadScript(url){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=url;sc.onload=resolve;sc.onerror=()=>reject(Error('无法加载 '+url));document.head.append(sc)})}
+function issue(s){if(!ready||!vm)return;vm.serial0_send(s+'\n')}
+function usable(){ready=true;demo.disabled=false;send.disabled=false;input.disabled=false;reset.disabled=false;say('已收到 Linux shell 提示符，可运行命令。')}
+async function boot(){
+ start.disabled=true;say('正在下载 v86 组件…');terminal.value='';
+ try {
+  if(!scriptLoaded){await loadScript('https://copy.sh/v86/build/libv86.js');scriptLoaded=true}
+  if(typeof V86!=='function')throw Error('V86 接口未提供');
+  say('正在加载精简 Linux 内核…');
+  vm=new V86({
+   wasm_path:'https://copy.sh/v86/build/v86.wasm',
+   memory_size:128*1024*1024,
+   vga_memory_size:2*1024*1024,
+   bios:{url:'https://copy.sh/v86/bios/seabios.bin'},
+   vga_bios:{url:'https://copy.sh/v86/bios/vgabios.bin'},
+   bzimage:{url:'https://i.copy.sh/buildroot-bzimage68.bin',async:false},
+   filesystem:{},
+   cmdline:'tsc=reliable mitigations=off random.trust_cpu=on',
+   autostart:true,
+   disable_keyboard:true
+  });
+  vm.add_listener('serial0-output-byte',function(byte){
+   const c=String.fromCharCode(byte);
+   if(c==='\r')return;
+   append(c);tail=(tail+c).slice(-120);
+   if(!ready&&(/~% $|[#$] $/.test(tail)))usable();
+  });
+  vm.add_listener('emulator-ready',()=>say('模拟器已初始化，正在等待 Linux shell…'));
+  reset.disabled=false;
+ }catch(e){say('启动失败：'+e.message);append('\n[加载失败] '+e.message+'\n');start.disabled=false}
+}
+start.addEventListener('click',boot);
+const commands=[
+ 'uname -a',
+ 'id',
+ 'mkdir -p /tmp/ep002',
+ 'cd /tmp/ep002',
+ 'truncate -s 64M sparse.bin',
+ 'stat sparse.bin',
+ 'du -h sparse.bin',
+ 'du -h --apparent-size sparse.bin',
+ "dd if=/dev/zero of=sparse.bin bs=4096 count=1 seek=16383 conv=notrunc",
+ 'du -h sparse.bin',
+ "dd if=sparse.bin bs=1 skip=4096 count=8 2>/dev/null | od -An -tx1",
+ 'rm -f sparse.bin',
+ 'cd /'
+];
+demo.addEventListener('click',()=>{
+ if(!ready)return;
+ say('已将 64 MiB 安全实验命令发送到真实 Linux。执行输出由虚拟机产生。');
+ // Group into one shell command to avoid asynchronous shell interleaving.
+ issue(commands.join('; '));
+});
+send.addEventListener('click',()=>{const command=input.value.trim();if(!command)return;issue(command);input.value='';input.focus()});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send.click()}});
+reset.addEventListener('click',async()=>{if(vm){await vm.destroy();vm=null}ready=false;demo.disabled=true;send.disabled=true;input.disabled=true;reset.disabled=true;start.disabled=false;terminal.value='';say('已重置。点击启动 Linux。')});
+</script>
+</body></html>
