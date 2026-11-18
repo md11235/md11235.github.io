@@ -40,7 +40,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <div class="results" id="checks" aria-live="polite"></div>
 </div>
 <p class="note">参考结果是对稀疏文件原理的预测：逻辑长度应为 67,108,864 B，空洞应读出 00，写入首尾后能读回 41（A）和 5a（Z）。实际已分配块数因文件系统而异，因此只作趋势对比，不强制等于 8 KiB。此处运行 64 MiB，不会对虚拟机预分配 1 TiB 数据。</p>
-<p class="note">技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次下载内核和模拟器需要联网。外部资源、浏览器及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
+<p class="note">技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次下载内核、BIOS 和模拟器需要联网。外部资源、浏览器及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -104,12 +104,13 @@ async function start(){
   say("正在检查并编译 WebAssembly（固定版本 0.5.472）…");
   const wasmObject=await loadWasm();
   if(thisToken!==bootToken)return;
+  say("WASM 已加载，正在通过支持 CORS 的 CDN 加载 BIOS 并启动 Linux…");
   vm=new V86({
    wasm_fn:async imports=>(await WebAssembly.instantiate(wasmObject,imports)).exports,
    memory_size:128*1024*1024,
    vga_memory_size:2*1024*1024,
-   bios:{url:"https://copy.sh/v86/bios/seabios.bin"},
-   vga_bios:{url:"https://copy.sh/v86/bios/vgabios.bin"},
+   bios:{url:"https://cdn.jsdelivr.net/gh/copy/v86@master/bios/seabios.bin"},
+   vga_bios:{url:"https://cdn.jsdelivr.net/gh/copy/v86@master/bios/vgabios.bin"},
    bzimage:{url:"https://i.copy.sh/buildroot-bzimage68.bin",async:false},
    filesystem:{},
    cmdline:"tsc=reliable mitigations=off random.trust_cpu=on",
