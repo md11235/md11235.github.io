@@ -1,0 +1,47 @@
+name: Vendor xterm.js for Linux Extreme
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-xterm.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: vendor-xterm-assets
+  cancel-in-progress: false
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned xterm.js packages and verify browser bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp="$(mktemp -d)"
+          cd "$temp"
+          npm install --no-audit --no-fund --ignore-scripts --no-save @xterm/xterm@6.0.0 @xterm/addon-fit@0.11.0
+          dest="$GITHUB_WORKSPACE/linux-extreme/vendor/xterm"
+          mkdir -p "$dest"
+          cp node_modules/@xterm/xterm/lib/xterm.js "$dest/xterm.js"
+          cp node_modules/@xterm/xterm/css/xterm.css "$dest/xterm.css"
+          cp node_modules/@xterm/addon-fit/lib/addon-fit.js "$dest/addon-fit.js"
+          test "$(wc -c < "$dest/xterm.js")" -gt 100000
+          test "$(wc -c < "$dest/addon-fit.js")" -gt 1000
+          grep -q 'xterm' "$dest/xterm.css"
+          (cd "$dest" && sha256sum xterm.js xterm.css addon-fit.js > SHA256SUMS)
+          ls -lh "$dest"
+      - name: Commit locally hosted terminal emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add linux-extreme/vendor/xterm
+          if ! git diff --cached --quiet; then
+            git commit -m 'Vendor xterm.js terminal renderer and fit addon'
+            git push origin HEAD:master
+          fi
