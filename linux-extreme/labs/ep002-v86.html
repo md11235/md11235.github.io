@@ -39,7 +39,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <p class="note" id="summary">启动 Linux 并执行实验后，将逐项显示虚拟机返回的数值及判定依据。</p>
  <div class="results" id="checks" aria-live="polite"></div>
 </div>
-<p class="note">参考结果是对稀疏文件原理的预测：逻辑长度应为 67,108,864 B，空洞应读出 00，写入首尾后能读回 41（A）和 5a（Z）。实际已分配块数因文件系统而异，因此只作趋势对比，不强制等于 8 KiB。此处运行 64 MiB，不会对虚拟机预分配 1 TiB 数据。</p>
+<p class="note">参考结果是对稀疏文件原理的预测：逻辑长度应为 67,108,864 B，空洞应读出 00，写入首尾后能读回 41（A）和 5a（Z）。磁盘占用由 du -k 读取，以 KiB 为单位；文件系统不同可能影响结果，因此只判断增长趋势，不强制等于 8 KiB。此处运行 64 MiB，不会对虚拟机预分配 1 TiB 数据。</p>
 <p class="note">技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次访问需要从本站下载内核、BIOS 和模拟器，后续可利用浏览器缓存。浏览器兼容性、镜像启动及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
 <script>
 "use strict";
@@ -123,22 +123,25 @@ async function start(){
  }catch(e){if(thisToken===bootToken)failed(String(e.message||e))}
 }
 const labCommands=[
- "mkdir -p /tmp/lx_ep002",
- "cd /tmp/lx_ep002",
- "if command -v truncate >/dev/null 2>&1 && command -v stat >/dev/null 2>&1 && command -v od >/dev/null 2>&1 && command -v dd >/dev/null 2>&1 && command -v tail >/dev/null 2>&1 && command -v head >/dev/null 2>&1; then",
- "  if truncate -s 64M sparse.bin; then",
- "    printf 'LX_SIZE='; stat -c %s sparse.bin",
- "    printf 'LX_BEFORE_BLOCKS='; stat -c %b sparse.bin",
+ "lx_result=0",
+ "mkdir -p /tmp/lx_ep002 && cd /tmp/lx_ep002",
+ "printf 'LX_GUEST_TOOLS='",
+ "for x in dd wc od du stat truncate head tail; do if command -v \"$x\" >/dev/null 2>&1; then printf '%s:yes ' \"$x\"; else printf '%s:no ' \"$x\"; fi; done; printf '\\n'",
+ "if command -v dd >/dev/null 2>&1 && command -v wc >/dev/null 2>&1 && command -v od >/dev/null 2>&1; then",
+ "  if dd if=/dev/zero of=sparse.bin bs=4096 count=0 seek=16384 2>/dev/null; then",
+ "    printf 'LX_SIZE='; wc -c < sparse.bin",
+ "    if command -v du >/dev/null 2>&1; then set -- $(du -k sparse.bin); printf 'LX_BEFORE_KIB=%s\\n' \"$1\"; else printf 'LX_BEFORE_KIB=NA\\n'; fi",
  "    printf A | dd of=sparse.bin bs=1 count=1 conv=notrunc 2>/dev/null",
  "    printf Z | dd of=sparse.bin bs=1 count=1 seek=67108863 conv=notrunc 2>/dev/null",
- "    printf 'LX_AFTER_BLOCKS='; stat -c %b sparse.bin",
+ "    if command -v du >/dev/null 2>&1; then set -- $(du -k sparse.bin); printf 'LX_AFTER_KIB=%s\\n' \"$1\"; else printf 'LX_AFTER_KIB=NA\\n'; fi",
  "    printf 'LX_FIRST='; dd if=sparse.bin bs=1 count=1 2>/dev/null | od -An -tx1",
- "    printf 'LX_HOLE='; dd if=sparse.bin bs=4096 skip=1 count=1 2>/dev/null | head -c 1 | od -An -tx1",
- "    printf 'LX_LAST='; tail -c 1 sparse.bin | od -An -tx1",
- "  else printf 'LX_ERROR=truncate failed\\n'; fi",
- "else printf 'LX_ERROR=required BusyBox commands missing\\n'; fi",
- "rm -f sparse.bin",
- "cd /"
+ "    printf 'LX_HOLE='; dd if=sparse.bin bs=4096 skip=1 count=1 2>/dev/null | dd bs=1 count=1 2>/dev/null | od -An -tx1",
+ "    printf 'LX_LAST='; dd if=sparse.bin bs=1 skip=67108863 count=1 2>/dev/null | od -An -tx1",
+ "  else printf 'LX_ERROR=dd failed to create sparse file\\n'; lx_result=1; fi",
+ "else printf 'LX_ERROR=missing dd, wc or od (see LX_GUEST_TOOLS)\\n'; lx_result=1; fi",
+ "rm -f /tmp/lx_ep002/sparse.bin",
+ "cd /",
+ "printf 'LX_SCRIPT_RC=%s\\n' \"$lx_result\""
 ];
 // Guest shell receives a multiline script through the serial terminal.
 function run(){
@@ -147,23 +150,23 @@ function run(){
  runInfo={id,date:new Date().toISOString(),output:"",exitCode:null};
  checks.textContent="";summary.textContent="等待 Linux 实验数据…";setStep(3,"active");setStep(4,"");setStep(5,"");controls();
  say("正在发送实验到 Linux…");
- const command="printf '\\n"+startMarker+"\\n';\n"+labCommands.join("\n")+"\nprintf '\\n"+endMarker+"%s\\n' \"$?\"";
+ const command="printf '\\n"+startMarker+"\\n';\n"+labCommands.join("\n")+"\nprintf '\\n"+endMarker+"%s\\n' \"$lx_result\"";
  try{sendRaw(command)}catch(e){phase="ready";say("无法发送命令："+e.message);controls();return}
  runTimer=setTimeout(()=>{if(phase==="running"&&runInfo&&runInfo.id===id){runInfo.output=capture;runInfo.exitCode="timeout";phase="ready";setStep(4,"fail");say("实验超时（60 秒），请查看终端输出后重试。");evaluate(runInfo);controls()}},60000);
 }
 function field(output,key){const m=output.match(new RegExp("(?:^|\\n)"+key+"=\\s*([^\\r\\n]+)"));return m?m[1].trim():null}
 function evaluate(result){
  const o=result.output;
- const size=field(o,"LX_SIZE"),before=field(o,"LX_BEFORE_BLOCKS"),after=field(o,"LX_AFTER_BLOCKS");
+ const size=field(o,"LX_SIZE"),before=field(o,"LX_BEFORE_KIB"),after=field(o,"LX_AFTER_KIB");
  const first=field(o,"LX_FIRST"),hole=field(o,"LX_HOLE"),last=field(o,"LX_LAST");
  const reason=field(o,"LX_ERROR"),numeric=x=>x!==null&&/^\d+$/.test(x);
  const items=[
   ["逻辑长度",size,"67108864 B",size==="67108864"],
-  ["初始分配块数",before,"0（常见文件系统）",numeric(before)&&Number(before)===0],
+  ["初始磁盘占用",before,"0 KiB（支持稀疏文件时）",numeric(before)&&Number(before)===0],
   ["首字节",first,"41（ASCII A）",first!==null&&/^41\b/i.test(first)],
   ["中间空洞",hole,"00（零字节）",hole!==null&&/^00\b/i.test(hole)],
   ["末字节",last,"5a（ASCII Z）",last!==null&&/^5a\b/i.test(last)],
-  ["写入后分配块数",after,"大于初始值；受文件系统影响",numeric(before)&&numeric(after)&&Number(after)>Number(before)]
+  ["写入后磁盘占用",after,"大于初始值；受文件系统影响",numeric(before)&&numeric(after)&&Number(after)>Number(before)]
  ];
  checks.textContent="";
  for(const [name,actual,expect,pass] of items){
@@ -175,7 +178,7 @@ function evaluate(result){
  }
  const passCount=items.filter(x=>x[3]).length;
  const all=passCount===items.length&&!reason&&result.exitCode==="0";
- summary.textContent=all?"全部 6 项检查通过（6/6）。Linux 已返回与稀疏文件原理一致的结果。":"完成 "+passCount+"/6 项检查"+(reason?"；"+reason:"")+"。请核对终端和运行环境；分配块数可能因文件系统不同而变化。";
+ summary.textContent=all?"全部 6 项检查通过（6/6）。Linux 已返回与稀疏文件原理一致的结果。":"完成 "+passCount+"/6 项检查"+(reason?"；"+reason:"")+"。请核对终端的 LX_GUEST_TOOLS 与报错；文件系统可能不提供预期的磁盘占用信息。";
  setStep(5,all?"done":"fail");
  say(all?"已完成：Linux 实际输出已自动采集，全部检查通过。":"已完成采集：部分检查未通过，保留真实输出供分析。");
 }
