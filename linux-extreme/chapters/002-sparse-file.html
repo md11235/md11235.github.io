@@ -22,6 +22,12 @@ bash ep002.sh 2>&amp;1 | tee ep002-output.txt</code></pre>
 <p style="font-size:.86rem;color:#97abc5">浏览器实验分为启动、就绪握手、一键执行、输出采集和参考对照五个阶段，采用精简 32 位 Linux 与 64 MiB 稀疏文件，验证相同的空洞机制；上方 1 TiB 的数据来自原 Linux x86-64 环境。浏览器内是否能运行取决于 WebAssembly、远程镜像资源及浏览器兼容性。<a href="../labs/ep002-v86.html" target="_blank" rel="noopener noreferrer">在独立窗口打开实验室</a>。</p><h2>实验实录 · Verified Run</h2>
 <p>2026 年 11 月 17 日，在 <strong>Linux 6.18.57 x86-64 / overlayfs</strong> 上实际运行，进程退出状态为 <strong>0</strong>。本节展示该环境的实验结果。</p>
 <figure><a href="../artifacts/ep002/terminal.svg"><img src="../artifacts/ep002/terminal.svg" alt="EP002 实测终端截图：1 TiB 文件初始占用 0 B，写入首尾各 4 KiB 后磁盘占用 8 KiB，空洞读出零字节"></a><figcaption>EP002 实验记录 · 点击查看大图</figcaption></figure>
+<h3>真正执行的 Shell 命令</h3>
+<p>实验记录中以 <code>#</code> 开头的行用于解释操作；以 <code>$</code> 开头的行才表示 Shell 命令。例如，下列命令从文件偏移 1 GiB 的位置读取连续 16 个字节，并使用十六进制逐字节显示：</p>
+<pre><code># 文件 one-tib.bin 已由 truncate -s 1T 创建
+$ dd if=one-tib.bin bs=1 skip=1073741824 count=16 status=none | od -An -tx1
+ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</code></pre>
+<p>其中 <code>skip=1073741824</code> 对应 1 GiB 的偏移量；<code>od -An -tx1</code> 表示不显示地址，并按十六进制输出每个字节。上述命令与实验脚本中使用变量指定路径的命令等价。</p>
 <div class="links"><a href="../artifacts/ep002/output.txt">原始输出</a><a href="../artifacts/ep002/result-summary.txt">结果摘要</a><a href="../artifacts/ep002/terminal.svg">SVG 截图</a><a href="../scripts/ep002.sh">实验脚本</a><a href="../tools/render-terminal-shot-v2.py">通用截图生成器</a></div>
 <h2>03 · The Breaking Point</h2>
 <table><thead><tr><th>操作</th><th>文件逻辑大小</th><th>本次实测已分配空间</th></tr></thead><tbody><tr><td>truncate 后</td><td>1 TiB</td><td>0 B</td></tr><tr><td>首尾分别写入 4 KiB</td><td>1 TiB</td><td>8192 B（8 KiB）</td></tr></tbody></table>
