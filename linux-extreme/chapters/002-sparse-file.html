@@ -16,9 +16,12 @@
 # 在本地保留标准输出与错误输出
 bash ep002.sh 2>&amp;1 | tee ep002-output.txt</code></pre>
 <p>脚本通过 <code>mktemp</code> 建立独立目录，并通过 <code>trap ... EXIT</code> 自动清理；按顺序执行长度设置、块数统计、空洞读取以及首尾各 4096 字节的真实写入和校验。</p>
-<h2>实验实录 · Verified Run</h2>
-<p>2026 年 11 月 17 日，在 <strong>Linux 6.18.57 x86-64 / overlayfs</strong> 上实际运行，进程退出状态为 <strong>0</strong>。下面这张<strong>模拟终端截图由程序使用真实记录的 output.txt 绘制</strong>，不是人工截图；所有数值均可在原始日志中核对。</p>
-<figure><a href="../artifacts/ep002/terminal.svg"><img src="../artifacts/ep002/terminal.svg" alt="EP002 实测终端截图：1 TiB 文件初始占用 0 B，写入首尾各 4 KiB 后磁盘占用 8 KiB，空洞读出零字节"></a><figcaption>源于实际执行日志的终端模拟器渲染 · 点击查看矢量大图</figcaption></figure>
+<h2>Live Linux Lab · 直接在网页里动手</h2>
+<p>无需安装 Linux：点击下面的“启动 Linux”，由浏览器中的 WebAssembly x86 模拟器启动轻量 Linux，随后可以手工输入命令，或点击“运行稀疏文件实验”。这是实验型功能，首次需加载虚拟机资源。</p>
+<div style="overflow:hidden;border:1px solid #37566a;border-radius:15px;background:#080d16"><iframe id="ep002-linux-lab" title="EP002 浏览器内真实 Linux 交互实验室" src="../labs/ep002-v86.html" loading="lazy" style="display:block;width:100%;height:665px;border:0" allow="fullscreen"></iframe></div>
+<p style="font-size:.86rem;color:#97abc5">浏览器实验采用精简 32 位 Linux 与 64 MiB 稀疏文件，验证相同的空洞机制；上方 1 TiB 的数据来自原 Linux x86-64 环境。浏览器内是否能运行取决于 WebAssembly、远程镜像资源及浏览器兼容性。<a href="../labs/ep002-v86.html" target="_blank" rel="noopener noreferrer">在独立窗口打开实验室</a>。</p><h2>实验实录 · Verified Run</h2>
+<p>2026 年 11 月 17 日，在 <strong>Linux 6.18.57 x86-64 / overlayfs</strong> 上实际运行，进程退出状态为 <strong>0</strong>。本节展示该环境的实验结果。</p>
+<figure><a href="../artifacts/ep002/terminal.svg"><img src="../artifacts/ep002/terminal.svg" alt="EP002 实测终端截图：1 TiB 文件初始占用 0 B，写入首尾各 4 KiB 后磁盘占用 8 KiB，空洞读出零字节"></a><figcaption>EP002 实验记录 · 点击查看大图</figcaption></figure>
 <div class="links"><a href="../artifacts/ep002/output.txt">原始输出</a><a href="../artifacts/ep002/result-summary.txt">结果摘要</a><a href="../artifacts/ep002/terminal.svg">SVG 截图</a><a href="../scripts/ep002.sh">实验脚本</a><a href="../tools/render-terminal-shot-v2.py">通用截图生成器</a></div>
 <h2>03 · The Breaking Point</h2>
 <table><thead><tr><th>操作</th><th>文件逻辑大小</th><th>本次实测已分配空间</th></tr></thead><tbody><tr><td>truncate 后</td><td>1 TiB</td><td>0 B</td></tr><tr><td>首尾分别写入 4 KiB</td><td>1 TiB</td><td>8192 B（8 KiB）</td></tr></tbody></table>
