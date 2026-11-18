@@ -13,17 +13,17 @@ estimated allocated: 0 bytes
 du apparent: 1.0T
 du disk usage: 0
 
-$ read 16 bytes from the middle of the hole (od -An -tx1)
+# read 16 bytes from the middle of the hole (od -An -tx1)
  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-$ write 4096 bytes at the first and last 4 KiB of the file
+# write 4096 bytes at the first and last 4 KiB of the file
 stat size (logical): 1099511627776 bytes
 stat blocks allocated: 16 (units of 512 bytes)
 estimated allocated: 8192 bytes
 du apparent: 1.0T
 du disk usage: 8.0K
 
-$ check first/last byte and hole byte
+# check first/last byte and hole byte
 start:    A
 hole:   00
 end:      Z
