@@ -77,3 +77,16 @@ bash scripts/ep002.sh 2>&1 | tee ep002-output.txt
 [自动下载工作流](../.github/workflows/vendor-v86.yml) 含文件大小和 WASM/Linux bzImage 签名检查；上传成功对应提交 `e0aa30ce`。实验室现在使用相对路径 `../vendor/v86/`，不再向 jsDelivr、copy.sh 或 i.copy.sh 请求这些运行依赖。GitHub Pages 静态资源均与实验室同源。
 
 **注意**：GitHub 仓库已验证所有文件被提交；目前线上站点和真实浏览器内的 Linux 启动仍需验证。文件格式完整不等于镜像一定可成功启动，也不能保证所有浏览器支持。
+
+## EP002：修复 BusyBox 缺少命令造成的 0/6（2026-11-18）
+
+用户的 v86 Linux 已成功启动，但原浏览器脚本将 `truncate/stat/od/dd/head/tail` 全部作为前置条件，部分精简 BusyBox 镜像不包含 `truncate` 或 `stat`，导致 `required BusyBox commands missing` 并跳过全部验证。
+
+修复后：
+- 使用 `dd if=/dev/zero of=sparse.bin bs=4096 count=0 seek=16384` 安全创建逻辑 64 MiB 的稀疏文件，不进行 64 MiB 实际写入。
+- 使用 `wc -c` 获取文件逻辑长度，并以 `du -k` 取得分配量（KiB），不再依赖 `stat`。
+- 用 `dd | od -An -tx1` 验证首字节、空洞以及文件末字节；相应跳过操作只依赖 `dd` 的 seek/skip。
+- 自动输出 `LX_GUEST_TOOLS` 检测明细，便于诊断缺失的程序；若缺少 `du`，标记 `NA` 而不是直接取消其他检查。
+- 本地使用 BusyBox ash 验证核心命令，参考输出为：`67108864, 0 KiB, 8 KiB, 41, 00, 5a`。
+
+仍需在实际网页中验证 Buildroot 运行与结果采集；不同文件系统可能报告不同的 `du` 分配量。
