@@ -123,3 +123,15 @@ bash scripts/ep002.sh 2>&1 | tee ep002-output.txt
 - Enter 提交命令、Shift+Enter 插入换行；发送成功后保留编辑焦点。
 - `controls()` 不再禁用编辑控件，并明确设置 `readOnly=false`。
 - 两份 HTML 都已通过 JavaScript 语法检查，但仍需在用户使用的实际浏览器中验证键盘焦点和虚拟机键盘事件行为。
+
+## EP001 / EP002 改用 xterm.js 终端（2026-11-18）
+
+用户发现终端在执行 `ls` 时将 ANSI/VT 颜色控制序列直接显示为乱码。原终端是 `textarea`，只能显示普通文本，没有 ANSI 解释器。
+
+- 已通过 [GitHub Actions](../.github/workflows/vendor-xterm.yml) 将固定版本的 `@xterm/xterm 6.0.0`、`@xterm/addon-fit 0.11.0` 的浏览器 bundle、CSS 和 SHA256 校验清单提交到 `vendor/xterm/`。
+- EP001/EP002 都改为 `Terminal` 实例渲染从 `serial0-output-byte` 收到的串口数据，使用流式 TextDecoder 处理字节，并把 CR 原样交给终端，同时原有实验结果采集器仍监听相同串口字节。
+- xterm.js 自动解析颜色、光标移动、擦除、滚动等 ANSI/VT 序列；页面尺寸改变时使用 FitAddon 调整渲染尺寸。
+- xterm.js `onData` 将键盘输入回送 v86 串口；Enter 的 CR 转为 LF，同时保留独立的命令编辑框和发送按钮。
+- 运行时资源完全同源，由 GitHub Pages 提供，不使用第三方 CDN。浏览器 HTTP 缓存可以复用新终端文件。v86 的五项启动依赖及其 Cache Storage 缓存逻辑保持不变。
+- 注意：浏览器显示端是全功能 ANSI 终端模拟器，但虚拟机内连接的仍是 serial console，不等于具有完整 Linux PTY 终端尺寸协商；某些全屏交互程序不一定正常运行。
+- 已验证页面 JS 语法、v86 字节转发到 xterm、CR/LF 保留和 xterm 输入回送的逻辑。实际浏览器中带颜色的 `ls` 需端到端试运行确认。
