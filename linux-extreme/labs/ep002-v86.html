@@ -52,6 +52,15 @@ function say(v){statusEl.textContent=v}
 function setStep(n,state){const e=$("s"+n);e.className="step"+(state?" "+state:"")}
 function resetSteps(){for(let n=1;n<=5;n++)setStep(n,n===1?"active":"")}
 function append(s){terminal.value+=s;if(terminal.value.length>bufferLimit)terminal.value=terminal.value.slice(-bufferLimit);terminal.scrollTop=terminal.scrollHeight}
+async function loadWasm(){
+ const url="https://cdn.jsdelivr.net/npm/v86@0.5.472/build/v86.wasm";
+ let response;
+ try{response=await fetch(url,{mode:"cors"})}catch(e){throw new Error("WASM 下载被网络或跨域策略阻止："+String(e.message||e))}
+ if(!response.ok)throw new Error("WASM 服务器返回 HTTP "+response.status);
+ const bytes=await response.arrayBuffer();
+ if(bytes.byteLength<100000)throw new Error("WASM 文件尺寸异常，可能返回了错误页面");
+ try{return await WebAssembly.compile(bytes)}catch(e){throw new Error("WASM 编译失败："+String(e.message||e))}
+}
 function loadScript(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error("无法加载模拟器脚本"));document.head.append(script)})}
 function sendRaw(s){if(!vm)throw new Error("Linux 尚未启动");vm.serial0_send(s+"\n")}
 function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready;sendBtn.disabled=!ready;cmd.disabled=!ready;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!runInfo;runBtn.textContent=running?"实验执行中…":"运行 EP002 · 64 MiB"}
@@ -89,11 +98,14 @@ async function start(){
  readyProbe=false;tail="";line="";runInfo=null;checks.textContent="";summary.textContent="Linux 启动中…";
  bootTimer=setTimeout(()=>{if(bootToken===thisToken&&phase==="booting")failed("Linux 在 120 秒内未完成 shell 握手，请重置并重试。")},120000);
  try{
-  if(typeof V86!=="function")await loadScript("https://copy.sh/v86/build/libv86.js");
+  if(typeof V86!=="function")await loadScript("https://cdn.jsdelivr.net/npm/v86@0.5.472/build/libv86.js");
   if(thisToken!==bootToken)return;
   if(typeof V86!=="function")throw new Error("V86 运行库未初始化");
+  say("正在检查并编译 WebAssembly（固定版本 0.5.472）…");
+  const wasmObject=await loadWasm();
+  if(thisToken!==bootToken)return;
   vm=new V86({
-   wasm_path:"https://copy.sh/v86/build/v86.wasm",
+   wasm_path:wasmObject,
    memory_size:128*1024*1024,
    vga_memory_size:2*1024*1024,
    bios:{url:"https://copy.sh/v86/bios/seabios.bin"},
@@ -112,7 +124,7 @@ async function start(){
 const labCommands=[
  "mkdir -p /tmp/lx_ep002",
  "cd /tmp/lx_ep002",
- "if command -v truncate >/dev/null 2>&1 && command -v stat >/dev/null 2>&1 && command -v od >/dev/null 2>&1 && command -v dd >/dev/null 2>&1; then",
+ "if command -v truncate >/dev/null 2>&1 && command -v stat >/dev/null 2>&1 && command -v od >/dev/null 2>&1 && command -v dd >/dev/null 2>&1 && command -v tail >/dev/null 2>&1 && command -v head >/dev/null 2>&1; then",
  "  if truncate -s 64M sparse.bin; then",
  "    printf 'LX_SIZE='; stat -c %s sparse.bin",
  "    printf 'LX_BEFORE_BLOCKS='; stat -c %b sparse.bin",
@@ -120,21 +132,21 @@ const labCommands=[
  "    printf Z | dd of=sparse.bin bs=1 count=1 seek=67108863 conv=notrunc 2>/dev/null",
  "    printf 'LX_AFTER_BLOCKS='; stat -c %b sparse.bin",
  "    printf 'LX_FIRST='; dd if=sparse.bin bs=1 count=1 2>/dev/null | od -An -tx1",
- "    printf 'LX_HOLE='; dd if=sparse.bin bs=1 skip=4096 count=1 2>/dev/null | od -An -tx1",
- "    printf 'LX_LAST='; dd if=sparse.bin bs=1 skip=67108863 count=1 2>/dev/null | od -An -tx1",
+ "    printf 'LX_HOLE='; dd if=sparse.bin bs=4096 skip=1 count=1 2>/dev/null | head -c 1 | od -An -tx1",
+ "    printf 'LX_LAST='; tail -c 1 sparse.bin | od -An -tx1",
  "  else printf 'LX_ERROR=truncate failed\\n'; fi",
  "else printf 'LX_ERROR=required BusyBox commands missing\\n'; fi",
  "rm -f sparse.bin",
  "cd /"
 ];
-// Single shell line keeps the input protocol compatible with serial console echo and shell prompts.
+// Guest shell receives a multiline script through the serial terminal.
 function run(){
  if(phase!=="ready")return;
  const id=++runCount;phase="running";capturing=false;capture="";
  runInfo={id,date:new Date().toISOString(),output:"",exitCode:null};
  checks.textContent="";summary.textContent="等待 Linux 实验数据…";setStep(3,"active");setStep(4,"");setStep(5,"");controls();
  say("正在发送实验到 Linux…");
- const command="printf '\\n"+startMarker+"\\n'; "+labCommands.join("\n")+"; printf '\\n"+endMarker+"%s\\n' \"$?\"";
+ const command="printf '\\n"+startMarker+"\\n';\n"+labCommands.join("\n")+"\nprintf '\\n"+endMarker+"%s\\n' \"$?\"";
  try{sendRaw(command)}catch(e){phase="ready";say("无法发送命令："+e.message);controls();return}
  runTimer=setTimeout(()=>{if(phase==="running"&&runInfo&&runInfo.id===id){runInfo.output=capture;runInfo.exitCode="timeout";phase="ready";setStep(4,"fail");say("实验超时（60 秒），请查看终端输出后重试。");evaluate(runInfo);controls()}},60000);
 }
