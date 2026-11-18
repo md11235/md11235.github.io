@@ -90,3 +90,15 @@ bash scripts/ep002.sh 2>&1 | tee ep002-output.txt
 - 本地使用 BusyBox ash 验证核心命令，参考输出为：`67108864, 0 KiB, 8 KiB, 41, 00, 5a`。
 
 仍需在实际网页中验证 Buildroot 运行与结果采集；不同文件系统可能报告不同的 `du` 分配量。
+
+## EP002 浏览器本地缓存与手动命令输入（2026-11-18）
+
+实验室现在以 **Service Worker + Cache Storage** 持久缓存 `vendor/v86/` 下的五项静态启动依赖（模拟器 JS、WASM、SeaBIOS、VGA BIOS、Buildroot Linux 镜像），而不使用容量偏小的 `localStorage` 存储二进制文件。
+
+- 新增 `linux-extreme/sw.js`，Service Worker 范围限定为 `/linux-extreme/`；只拦截指定五个同源文件，优先读取缓存，未命中时访问 GitHub Pages，并缓存成功响应。
+- 页面第一次启动时依次准备缓存，展示下载进度和文件命中情况；以后启动复用缓存，减少重复下载。
+- 新增“清除 Linux 资源缓存”按钮；缓存版本命名 `linux-extreme-v86-assets-v1-20261118`，后续替换镜像文件时应提升版本号，以免使用旧版本。
+- 服务不受支持、配额不足或缓存被浏览器自动清理时，改用正常联网请求；不能保证所有浏览器都离线可用。缓存的是启动依赖，不包括 Linux 内存状态、用户文件或 Shell 历史。
+- 修正手动命令输入框默认禁用的行为：现在始终允许输入并保留文字；仅在 Linux 就绪、自动实验空闲时允许点击发送或按 Enter 发送。
+- 用户需在新版本部署后刷新页面（必要时硬刷新），使新 Service Worker 获取控制权。
+- 已通过 JS 语法和仓库文件复核；真实浏览器内的首次加载、缓存复用以及 Linux 启动仍需交互验证。
