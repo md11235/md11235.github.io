@@ -41,7 +41,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 <div class="panel">
  <strong>观察 → 证据 → 解释</strong>
  <p class="note" id="summary">启动 Linux 并执行实验后，将逐项显示虚拟机返回的数值及判定依据。</p>
- <div class="results" id="checks" aria-live="polite"></div><h3>原始错误（stderr）</h3><pre id="evidence" class="evidence">等待实验。</pre><p id="reflection"></p><h3>控制变量实验记录</h3><div class="history"><table><thead><tr><th>次数</th><th>文件数</th><th>名长 B</th><th>栈 KiB</th><th>额外环境 KiB</th><th>参数 B</th><th>一次 grep</th><th>分批匹配</th><th>预测</th></tr></thead><tbody id="history"></tbody></table></div><button id="clearhistory" class="secondary">清空记录</button><label for="conclusion">你的结论</label><textarea id="conclusion" rows="3" style="width:100%;background:#0c1727;color:white" placeholder="哪些证据支持你的结论？还有哪些问题没有验证？"></textarea>
+ <div class="results" id="checks" aria-live="polite"></div><h3>原始错误（stderr）</h3><pre id="evidence" class="evidence">等待实验。</pre><p id="reflection"></p><h3>控制变量实验记录</h3><div class="history"><table><thead><tr><th>次数</th><th>文件数</th><th>名长 B</th><th>栈 KiB</th><th>额外环境 KiB</th><th>实测环境 B</th><th>参数 B</th><th>退出码</th><th>一次 grep</th><th>分批匹配</th><th>预测</th></tr></thead><tbody id="history"></tbody></table></div><button id="clearhistory" class="secondary">清空记录</button><label for="conclusion">你的结论</label><textarea id="conclusion" rows="3" style="width:100%;background:#0c1727;color:white" placeholder="哪些证据支持你的结论？还有哪些问题没有验证？"></textarea>
 </div>
 <p class="note">每轮创建独立临时目录，使用同一批真实文件比较一次调用和每批最多 64 个文件的调用。修改栈和环境仅在子 shell 内生效。最多 2048 个文件，文件名不超过 240 字节。没有观测到 E2BIG 不代表实验失败。</p>
 <p class="note">终端采用 xterm.js 6，支持 ANSI/VT 控制序列与颜色；点击终端区域也可以直接键入命令。仍通过 v86 串口通信，不支持依赖完整 PTY/TTY ioctl 的所有全屏交互程序。技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次从本站下载 5 个依赖文件后，可通过浏览器 Cache Storage 持久缓存；后续启动优先使用本地文件（浏览器可能因空间不足自动清理缓存）。浏览器兼容性、镜像启动及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
@@ -241,7 +241,7 @@ function makeGuest(p,marker){
  p.env?"export LX_EXTRA=\"$extra\"":"unset LX_EXTRA",
  "if command -v env >/dev/null 2>&1; then printf 'LX_ENV_BYTES='; env | wc -c; fi",
  "printf '\\n# One external grep on all real files\\n'",
- "\"$gp\" -l NEEDLE \"$@\" > \"$d/one.out\" 2> \"$d/one.err\"; rc=$?",
+ "\"$gp\" -l NEEDLE *.txt > \"$d/one.out\" 2> \"$d/one.err\"; rc=$?",
  "printf 'LX_ONE_RC=%s\\n' \"$rc\"",
  "printf 'LX_ONE_MATCH='; wc -l < \"$d/one.out\"",
  "if \"$gp\" -q 'Argument list too long' \"$d/one.err\"; then printf 'LX_E2BIG=1\\n'; else printf 'LX_E2BIG=0\\n'; fi",
@@ -296,13 +296,21 @@ function evaluate(result){
  summary.textContent=observed+"；"+(batchOK?"分批处理找回全部真实文件。":"分批结果尚未验证。")+" "+prediction+"。"+(!complete?" 本轮采集不完整。":"");
  $("reflection").textContent=observation==="big"&&batchOK?"证据：同一批真实文件，一次调用失败而分组成功，说明瓶颈在一次程序启动所携带的参数，而不是 grep 无法处理这些文件。接下来只改变文件名长度或栈限制，再比较。":observation==="ok"?"本轮尚未超限。保持其他变量不变，增加数量或文件名长度，再寻找首次失败的区间。":"不能把其他错误当成 E2BIG；先阅读 stderr 和终端日志。";
  records.push({...result,count,bytes,length,stack,one,rc,hit,batch,brc,calls,observed,prediction,complete,batchOK,environment:val("ENV_BYTES"),argmax:val("ARGMAX")});
- renderHistory();setStep(5,complete&&observation!=="other"&&batchOK?"done":"fail");say("本轮实验结束："+observed);
+ renderHistory();compareRuns();setStep(5,complete&&observation!=="other"&&batchOK?"done":"fail");say("本轮实验结束："+observed);
+}
+function compareRuns(){
+ const current=records[records.length-1];if(!current||!current.complete)return;
+ const vars=["n","len","stack","env"];
+ const previous=records.slice(0,-1).reverse().find(r=>r.complete&&vars.filter(k=>r.config[k]!==current.config[k]).length===1);
+ if(!previous)return;
+ const k=vars.find(k=>previous.config[k]!==current.config[k]),labels={n:"文件数量",len:"文件名长度",stack:"栈软限制",env:"额外环境"};
+ $("reflection").textContent+=" 对照第 "+previous.id+" 轮：仅改变"+labels[k]+"（"+previous.config[k]+" → "+current.config[k]+"），一次 grep 从“"+previous.observed+"”变为“"+current.observed+"”。这是本轮控制变量的直接证据。";
 }
 function renderHistory(){
  const tbody=$("history");tbody.textContent="";
- for(const r of records){const tr=document.createElement("tr");for(const v of [r.id,r.count??"—",r.length??"—",r.stack??"—",r.config.env,r.bytes??"—",r.observed,r.batch??"—",r.prediction]){const td=document.createElement("td");td.textContent=v;tr.append(td)}tbody.append(tr)}
+ for(const r of records){const tr=document.createElement("tr");for(const v of [r.id,r.count??"—",r.length??"—",r.stack??"—",r.config.env,r.environment??"—",r.bytes??"—",r.rc??"—",r.observed,r.batch??"—",r.prediction]){const td=document.createElement("td");td.textContent=v;tr.append(td)}tbody.append(tr)}
 }
-$("clearhistory").onclick=()=>{records.length=0;renderHistory();controls()};
+$("clearhistory").onclick=()=>{records.length=0;renderHistory();$("reflection").textContent="";controls()};
 async function restart(){
  ++bootToken;clearClocks();const current=vm;vm=null;phase="idle";readyProbe=false;tail="";line="";capturing=false;capture="";runInfo=null;
  try{if(current&&typeof current.destroy==="function")await current.destroy()}catch(e){console.warn(e)}
