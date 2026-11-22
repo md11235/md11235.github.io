@@ -27,7 +27,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <button id="restart" class="secondary" disabled>重置</button><button id="purge" class="secondary">清除 Linux 资源缓存</button>
 </div>
 <p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
-<div id="terminal" role="region" aria-label="支持 ANSI 颜色与控制序列的 Linux 终端"></div>
+<div id="terminal" role="region" aria-label="支持 ANSI 颜色与控制序列的 Linux 终端"></div><p class="note">鼠标选中文字后按 Ctrl+C（Mac：Command+C），或右键选择复制。未选中文字时 Ctrl+C 仍用于中断 Linux 当前命令。</p>
 <div class="controls" id="editor-row">
  <textarea id="cmd" rows="2" placeholder="在此输入 Linux 命令，例如 uname -a。按 Enter 发送，Shift+Enter 换行。" aria-label="可编辑的 Linux 命令输入区" autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="0"></textarea>
  <button id="send" class="secondary" type="button">发送命令</button>
@@ -40,6 +40,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 </div>
 <p class="note">参考结果是对稀疏文件原理的预测：逻辑长度应为 67,108,864 B，空洞应读出 00，写入首尾后能读回 41（A）和 5a（Z）。磁盘占用由 du -k 读取，以 KiB 为单位；文件系统不同可能影响结果，因此只判断增长趋势，不强制等于 8 KiB。此处运行 64 MiB，不会对虚拟机预分配 1 TiB 数据。</p>
 <p class="note">终端采用 xterm.js 6，支持 ANSI/VT 控制序列与颜色；点击终端区域也可以直接键入命令。仍通过 v86 串口通信，不支持依赖完整 PTY/TTY ioctl 的所有全屏交互程序。技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次从本站下载 5 个依赖文件后，可通过浏览器 Cache Storage 持久缓存；后续启动优先使用本地文件（浏览器可能因空间不足自动清理缓存）。浏览器兼容性、镜像启动及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
+<script src="terminal-clipboard.js?v=1"></script>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -113,8 +114,9 @@ async function ensureTerminal(){
  if(!window.Terminal)throw new Error("终端核心 xterm.js 无法加载");
  term=new window.Terminal({cols:100,rows:20,convertEol:false,scrollback:5000,fontSize:14,fontFamily:"ui-monospace,Consolas,monospace",cursorBlink:true,theme:{background:"#060c14",foreground:"#d5f9e5",cursor:"#75efce"}});
  term.open(terminal);
+ if(window.installLinuxTerminalClipboard)window.installLinuxTerminalClipboard(term,terminal);
  if(window.FitAddon&&window.FitAddon.FitAddon){fitAddon=new window.FitAddon.FitAddon();term.loadAddon(fitAddon);fitAddon.fit()}
- term.onData(data=>{if(vm&&phase==="ready")vm.serial0_send(data.replace(/\r/g,"\n"))});
+ term.onData(data=>{if(vm&&(phase==="ready"||(phase==="running"&&data==="\x03")))vm.serial0_send(data.replace(/\r/g,"\n"))});
  term.write("Linux Extreme / v86 serial console\r\n");
  if(typeof ResizeObserver!=="undefined"&&fitAddon){new ResizeObserver(()=>{try{fitAddon.fit()}catch(e){}}).observe(terminal)}
 }
