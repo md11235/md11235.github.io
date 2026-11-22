@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "source": "git-last-commit",
-  "generated_at": "2026-11-22T00:37:04.908930+00:00",
+  "generated_at": "2026-11-22T00:37:23.768033+00:00",
   "count": 74,
   "pages": [
+    {
+      "title": "EP001 · Live Linux Lab · 自动验证",
+      "url": "/linux-extreme/labs/ep001-v86.html",
+      "path": "linux-extreme/labs/ep001-v86.html",
+      "updated_at": "2026-11-22T08:37:17+08:00",
+      "category": "Linux / Systems"
+    },
     {
       "title": "EP001 · 一条命令究竟能有多长？",
       "url": "/linux-extreme/chapters/001-argument-extreme.html",
       "path": "linux-extreme/chapters/001-argument-extreme.html",
       "updated_at": "2026-11-22T08:36:57+08:00",
-      "category": "Linux / Systems"
-    },
-    {
-      "title": "EP001 · Live Linux Lab · 自动验证",
-      "url": "/linux-extreme/labs/ep001-v86.html",
-      "path": "linux-extreme/labs/ep001-v86.html",
-      "updated_at": "2026-11-22T08:36:48+08:00",
       "category": "Linux / Systems"
     },
     {
