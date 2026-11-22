@@ -15,15 +15,20 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 .results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.check{background:#192a3f;border:1px solid #334b60;border-radius:8px;padding:9px}.check b{display:block}.check small{display:block;color:#9fb0c7}.pass{border-color:#3b9c7d}.fail{border-color:#ca7373}
 .note{font-size:.81rem;color:#9fb3ca}a{color:#8aeacb}#download{margin-top:10px}#download:disabled{display:none}
 @media(max-width:600px){#steps{grid-template-columns:repeat(5,minmax(0,1fr));font-size:.7rem}.step{padding:6px 2px;font-size:.7rem}.results{grid-template-columns:1fr}body{padding:10px}}
-</style></head>
+.variables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.discovery label{display:block;margin:8px 0;color:#d6e7f4}.discovery input[type=range]{display:block;width:100%;accent-color:#75efce}.discovery select,.discovery textarea{display:block;width:100%;background:#0c1727;color:#eaf5ff;border:1px solid #41607d;padding:9px;border-radius:7px;font:inherit}.discovery output{float:right;color:#8ff0ce}.discovery pre,.evidence{white-space:pre-wrap;overflow-wrap:anywhere;background:#08111e;padding:10px}.history{overflow:auto}.history table{border-collapse:collapse;width:100%;font-size:12px}.history th,.history td{padding:8px;text-align:left;border-bottom:1px solid #34465a;white-space:nowrap}.history td:last-child{white-space:normal}@media(max-width:600px){.variables{grid-template-columns:1fr}}</style></head>
 <body>
-<h2>EP001 / 浏览器 Linux 实验室</h2>
+<h2>EP001 / 知识发现实验室</h2><section class="panel discovery"><h2>ARG_MAX Explorer · 先预测，再验证</h2><p>同样是 grep，为什么文件多了就可能连程序都启动不了？每轮创建真实文件，每个文件含一行 NEEDLE。</p><div class="controls"><button id="pbase">① 基准</button><button id="pcount">② 增加数量</button><button id="plen">③ 缩短文件名</button><button id="pstack">④ 增大栈</button><button id="penv">⑤ 增大环境</button></div><div class="variables">
+<label>文件数量 <output id="nv"></output><input id="n" type="range" min="128" max="2048" step="128" value="512"></label>
+<label>文件名长度（ASCII 字节） <output id="lv"></output><input id="len" type="range" min="16" max="240" value="180"></label>
+<label>栈软限制（KiB）<select id="stack"><option>256</option><option>512</option><option>1024</option><option>8192</option></select></label>
+<label>额外环境变量值（KiB）<select id="env"><option>0</option><option>16</option><option>32</option><option>64</option></select></label></div><p id="estimate" class="note"></p>
+<label>你的预测<select id="prediction"><option value="">请选择预测</option><option value="ok">一次 grep 能匹配所有文件</option><option value="big">一次 grep 将因参数超限失败</option><option value="unsure">不确定，先验证</option></select></label><label>预测依据（选填）<textarea id="reason" rows="2" placeholder="我认为影响边界的是……"></textarea></label><p class="note">①→②只改数量；②→③只改长度；②→④只改栈；②→⑤只改环境。每次实验保留独立记录。</p><details><summary>查看本轮实际测试脚本</summary><pre id="preview"></pre></details></section>
 <div id="steps" aria-label="实验流程">
  <div class="step active" id="s1">① 点击启动</div><div class="step" id="s2">② Linux 就绪</div><div class="step" id="s3">③ 一键执行</div><div class="step" id="s4">④ 采集结果</div><div class="step" id="s5">⑤ 对照验证</div>
 </div>
 <div class="controls">
  <button id="boot">启动 Linux</button>
- <button id="run" disabled>运行 EP001 · 参数极限</button>
+ <button id="run" disabled>验证我的预测</button>
  <button id="restart" class="secondary" disabled>重置</button><button id="purge" class="secondary">清除 Linux 资源缓存</button>
 </div>
 <p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
@@ -31,14 +36,14 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 <div class="controls" id="editor-row">
  <textarea id="cmd" rows="2" placeholder="在此输入 Linux 命令，例如 uname -a。按 Enter 发送，Shift+Enter 换行。" aria-label="可编辑的 Linux 命令输入区" autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="0"></textarea>
  <button id="send" class="secondary" type="button">发送命令</button>
- <button id="download" class="secondary" disabled>保存本次结果</button>
+ <button id="download" class="secondary" disabled>导出实验报告</button>
 </div>
 <div class="panel">
- <strong>自动采集与结果对照</strong>
+ <strong>观察 → 证据 → 解释</strong>
  <p class="note" id="summary">启动 Linux 并执行实验后，将逐项显示虚拟机返回的数值及判定依据。</p>
- <div class="results" id="checks" aria-live="polite"></div>
+ <div class="results" id="checks" aria-live="polite"></div><h3>原始错误（stderr）</h3><pre id="evidence" class="evidence">等待实验。</pre><p id="reflection"></p><h3>控制变量实验记录</h3><div class="history"><table><thead><tr><th>次数</th><th>文件数</th><th>名长 B</th><th>栈 KiB</th><th>额外环境 KiB</th><th>参数 B</th><th>一次 grep</th><th>分批匹配</th><th>预测</th></tr></thead><tbody id="history"></tbody></table></div><button id="clearhistory" class="secondary">清空记录</button><label for="conclusion">你的结论</label><textarea id="conclusion" rows="3" style="width:100%;background:#0c1727;color:white" placeholder="哪些证据支持你的结论？还有哪些问题没有验证？"></textarea>
 </div>
-<p class="note">浏览器版逐步增长合成路径参数，尝试观察 grep 启动时的 E2BIG，并使用真实文件做 find 分批处理。最多 4096 个约 170 字节的参数，不创建海量文件。32 位 Buildroot 与原 Linux x86-64 的限制可能不同，未出现 E2BIG 也会如实报告。</p>
+<p class="note">每轮创建独立临时目录，使用同一批真实文件比较一次调用和每批最多 64 个文件的调用。修改栈和环境仅在子 shell 内生效。最多 2048 个文件，文件名不超过 240 字节。没有观测到 E2BIG 不代表实验失败。</p>
 <p class="note">终端采用 xterm.js 6，支持 ANSI/VT 控制序列与颜色；点击终端区域也可以直接键入命令。仍通过 v86 串口通信，不支持依赖完整 PTY/TTY ioctl 的所有全屏交互程序。技术基础：<a href="https://github.com/copy/v86" target="_blank" rel="noopener noreferrer">v86</a> / Buildroot。首次从本站下载 5 个依赖文件后，可通过浏览器 Cache Storage 持久缓存；后续启动优先使用本地文件（浏览器可能因空间不足自动清理缓存）。浏览器兼容性、镜像启动及 BusyBox 命令差异可能导致启动或某一检查失败；出现失败时会保留原始控制台信息，不伪造成功。</p>
 <script>
 "use strict";
@@ -130,7 +135,7 @@ async function loadWasm(){
 }
 function loadScript(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error("无法加载模拟器脚本"));document.head.append(script)})}
 function sendRaw(s){if(!vm)throw new Error("Linux 尚未启动");vm.serial0_send(s+"\n")}
-function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready;sendBtn.disabled=false;cmd.disabled=false;cmd.readOnly=false;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!runInfo;runBtn.textContent=running?"实验执行中…":"运行 EP001 · 参数极限"}
+function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready||!$("prediction").value;for(const id of ["n","len","stack","env","prediction","reason","pbase","pcount","plen","pstack","penv"])$(id).disabled=running;sendBtn.disabled=false;cmd.disabled=false;cmd.readOnly=false;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!records.length;runBtn.textContent=running?"实验执行中…":"验证我的预测"}
 function probe(){if(readyProbe||phase!=="booting")return;readyProbe=true;say("Linux 已出现 shell 提示符，正在验证命令交互…");sendRaw("printf '\\n"+readyMarker+"\\n'")}
 function onLine(v){
  const s=v.trim();
@@ -139,9 +144,9 @@ function onLine(v){
   say("Linux 已就绪 · 已完成真实 shell 命令握手。");controls();return;
  }
  if(phase==="running"&&runInfo){
-  if(s===startMarker){capturing=true;capture="";setStep(3,"done");setStep(4,"active");say("正在从 Linux 串口采集命令执行结果…");return}
-  if(s.startsWith(endMarker)&&capturing){
-   const rc=s.slice(endMarker.length).trim();
+  if(s===currentMarker+"_BEGIN"){capturing=true;capture="";setStep(3,"done");setStep(4,"active");say("正在从 Linux 串口采集命令执行结果…");return}
+  if(s.startsWith(currentMarker+"_END:")&&capturing){
+   const rc=s.slice((currentMarker+"_END:").length).trim();
    capturing=false;clearTimeout(runTimer);runInfo.exitCode=rc;runInfo.output=capture;
    phase="ready";setStep(4,"done");setStep(5,"active");evaluate(runInfo);controls();return;
   }
@@ -192,87 +197,112 @@ async function start(){
   controls();
  }catch(e){if(thisToken===bootToken)failed(String(e.message||e))}
 }
-const labCommands=[
- "lx_result=0",
- "mkdir -p /tmp/lx_ep001 && cd /tmp/lx_ep001",
+const records=[];
+const fields=["n","len","stack","env","prediction","reason"];
+function config(){return {n:Number($("n").value),len:Number($("len").value),stack:Number($("stack").value),env:Number($("env").value),prediction:$("prediction").value,reason:$("reason").value}}
+function estimate(){
+ const p=config();$("nv").textContent=p.n;$("lv").textContent=p.len;
+ const bytes=p.n*(p.len+1),approx=bytes+p.n*4+p.env*1024,budget=Math.max(131072,Math.min(p.stack*256,6291456));
+ $("estimate").textContent="理论估算：文件名字符串 "+bytes.toLocaleString()+" B（含 NUL）；加 32 位参数指针与额外环境约 "+approx.toLocaleString()+" B；参数预算约 "+budget.toLocaleString()+" B。未计基础环境和程序名等，不能代替实测。";
+ $("preview").textContent=makeGuest(p,"__LX1_EXAMPLE__");controls();
+}
+function preset(n,l,s,e){$("n").value=n;$("len").value=l;$("stack").value=s;$("env").value=e;$("prediction").value="";estimate()}
+$("pbase").onclick=()=>preset(512,180,256,0);
+$("pcount").onclick=()=>preset(1024,180,256,0);
+$("plen").onclick=()=>preset(1024,60,256,0);
+$("pstack").onclick=()=>preset(1024,180,1024,0);
+$("penv").onclick=()=>preset(512,180,256,32);
+for(const id of fields)$(id).addEventListener("input",estimate);
+function makeGuest(p,marker){
+ return [
+ "(",
  "export LC_ALL=C",
+ "printf '\\n"+marker+"_BEGIN\\n'",
+ "d=$(mktemp -d /tmp/lx1.XXXXXX) || exit 1",
+ "trap 'rm -rf \"$d\"' EXIT",
+ "trap 'exit 130' INT TERM",
+ "mkdir \"$d/data\" && cd \"$d/data\" || exit 1",
+ "gp=$(command -v grep); case \"$gp\" in /*) ;; *) printf 'LX_ERROR=external grep not found\\n'; exit 1;; esac",
+ "for t in wc cat rm; do command -v \"$t\" >/dev/null || { printf 'LX_ERROR=missing %s\\n' \"$t\"; exit 1; }; done",
  "printf 'LX_KERNEL='; uname -r",
- "printf 'LX_GUEST_TOOLS='; for x in grep find printf; do if command -v \"$x\" >/dev/null 2>&1; then printf '%s:yes ' \"$x\"; else printf '%s:no ' \"$x\"; fi; done; printf '\\n'",
- "if command -v grep >/dev/null 2>&1 && command -v find >/dev/null 2>&1; then",
- "  printf 'NEEDLE\\n' > actual.txt",
- "  grep -l NEEDLE actual.txt > /tmp/lx_ep001/base.out 2>/tmp/lx_ep001/base.err",
- "  printf 'LX_BASELINE='; cat /tmp/lx_ep001/base.out",
- "  pad=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
- "  old_stack=$(ulimit -s 2>/dev/null || printf unknown)",
- "  if ulimit -s 256 2>/dev/null; then printf 'LX_STACK_KIB=256\\n'; else printf 'LX_STACK_KIB=unchanged\\n'; fi",
- "  set --",
- "  i=0",
- "  lx_hit=0",
- "  lx_tested=0",
- "  for limit in 256 512 1024 2048 4096; do",
- "    while [ \"$i\" -lt \"$limit\" ]; do set -- \"$@\" \"file_$i-$pad\"; i=$((i+1)); done",
- "    lx_tested=$limit",
- "    printf 'LX_TRIAL_%s=' \"$limit\"",
- "    grep -l NEEDLE \"$@\" > /tmp/lx_ep001/attempt.out 2>/tmp/lx_ep001/attempt.err",
- "    rc=$?",
- "    if grep -q 'Argument list too long' /tmp/lx_ep001/attempt.err; then printf 'E2BIG\\n'; lx_hit=1; break; else printf 'NO_E2BIG(rc=%s)\\n' \"$rc\"; fi",
- "  done",
- "  printf 'LX_TESTED=%s\\n' \"$lx_tested\"",
- "  printf 'LX_E2BIG=%s\\n' \"$lx_hit\"",
- "  if [ \"$old_stack\" != unknown ]; then ulimit -s \"$old_stack\" 2>/dev/null || true; fi",
- "  mkdir -p /tmp/lx_ep001/batch",
- "  printf 'NEEDLE\\n' > /tmp/lx_ep001/batch/a.txt",
- "  printf 'NEEDLE\\n' > /tmp/lx_ep001/batch/b.txt",
- "  printf 'LX_BATCH='",
- "  find /tmp/lx_ep001/batch -type f -exec grep -l NEEDLE {} \\; | grep -c '.txt'",
- "else printf 'LX_ERROR=grep or find unavailable\\n'; lx_result=1; fi",
- "cd /",
- "rm -rf /tmp/lx_ep001",
- "printf 'LX_CLEANUP=done\\n'",
- "printf 'LX_SCRIPT_RC=%s\\n' \"$lx_result\""
-];
-// Guest shell receives a multiline script through the serial terminal.
+ "printf 'LX_STACK_BEFORE='; ulimit -s",
+ "ulimit -S -s "+p.stack+" || { printf 'LX_ERROR=cannot set stack soft limit\\n'; exit 1; }",
+ "printf 'LX_STACK='; ulimit -s",
+ "pad="+ "x".repeat(Math.max(0,p.len-8)),
+ "i=1; while [ \"$i\" -le "+p.n+" ]; do",
+ " name=$(printf '%04d%s.txt' \"$i\" \"$pad\"); printf 'NEEDLE\\n' > \"$name\" || exit 1; i=$((i+1))",
+ "done",
+ "set -- *.txt; printf 'LX_COUNT=%s\\n' \"$#\"",
+ "sum=0; for f do sum=$((sum+@{#f}+1)); done; printf 'LX_BYTES=%s\\n' \"$sum\"",
+ "printf 'LX_NAME_LEN=%s\\n' \"@{#1}\"",
+ "if command -v getconf >/dev/null 2>&1; then printf 'LX_ARGMAX='; getconf ARG_MAX; fi",
+ "printf 'LX_BASELINE='; \"$gp\" -l NEEDLE \"$1\" | wc -l",
+ "extra=x; while [ @{#extra} -lt "+Math.max(1,p.env*1024)+" ]; do extra=$extra$extra; done",
+ p.env?"export LX_EXTRA=\"$extra\"":"unset LX_EXTRA",
+ "if command -v env >/dev/null 2>&1; then printf 'LX_ENV_BYTES='; env | wc -c; fi",
+ "printf '\\n# One external grep on all real files\\n'",
+ "\"$gp\" -l NEEDLE \"$@\" > \"$d/one.out\" 2> \"$d/one.err\"; rc=$?",
+ "printf 'LX_ONE_RC=%s\\n' \"$rc\"",
+ "printf 'LX_ONE_MATCH='; wc -l < \"$d/one.out\"",
+ "if \"$gp\" -q 'Argument list too long' \"$d/one.err\"; then printf 'LX_E2BIG=1\\n'; else printf 'LX_E2BIG=0\\n'; fi",
+ "printf '"+marker+"_ERR_BEGIN\\n'; cat \"$d/one.err\"; printf '\\n"+marker+"_ERR_END\\n'",
+ "printf '\\n# Same files, batches of at most 64\\n'",
+ ": > \"$d/batch.out\"; : > \"$d/batch.err\"; batchrc=0; calls=0; set --",
+ "for f in *.txt; do set -- \"$@\" \"$f\"; if [ \"$#\" -eq 64 ]; then \"$gp\" -l NEEDLE \"$@\" >> \"$d/batch.out\" 2>> \"$d/batch.err\" || batchrc=1; calls=$((calls+1)); set --; fi; done",
+ "if [ \"$#\" -gt 0 ]; then \"$gp\" -l NEEDLE \"$@\" >> \"$d/batch.out\" 2>> \"$d/batch.err\" || batchrc=1; calls=$((calls+1)); fi",
+ "printf 'LX_BATCH_RC=%s\\nLX_CALLS=%s\\n' \"$batchrc\" \"$calls\"",
+ "printf 'LX_BATCH_MATCH='; wc -l < \"$d/batch.out\"",
+ "if [ -s \"$d/batch.err\" ]; then cat \"$d/batch.err\"; fi",
+ "cd /; if rm -rf \"$d\" && [ ! -e \"$d\" ]; then printf 'LX_CLEANUP=1\\n'; else printf 'LX_CLEANUP=0\\n'; exit 1; fi",
+ "trap - EXIT",
+ "); lx_rc=$?; printf '\\n"+marker+"_END:%s\\n' \"$lx_rc\""
+ ].join("\n").replaceAll("@{","$"+"{")
+}
+let currentMarker="";
 function run(){
  if(phase!=="ready")return;
- const id=++runCount;phase="running";capturing=false;capture="";
- runInfo={id,date:new Date().toISOString(),output:"",exitCode:null};
- checks.textContent="";summary.textContent="等待 Linux 实验数据…";setStep(3,"active");setStep(4,"");setStep(5,"");controls();
- say("正在发送实验到 Linux…");
- const command="printf '\\n"+startMarker+"\\n';\n"+labCommands.join("\n")+"\nprintf '\\n"+endMarker+"%s\\n' \"$lx_result\"";
- try{sendRaw(command)}catch(e){phase="ready";say("无法发送命令："+e.message);controls();return}
- runTimer=setTimeout(()=>{if(phase==="running"&&runInfo&&runInfo.id===id){runInfo.output=capture;runInfo.exitCode="timeout";phase="ready";setStep(4,"fail");say("实验超时（120 秒），请查看终端输出后重试。");evaluate(runInfo);controls()}},120000);
+ const p=config();if(!p.prediction){say("请先选择你的预测。");$("prediction").focus();return}
+ if(!Number.isInteger(p.n)||p.n<128||p.n>2048||!Number.isInteger(p.len)||p.len<16||p.len>240||![256,512,1024,8192].includes(p.stack)||![0,16,32,64].includes(p.env))return;
+ const id=++runCount;currentMarker="__LX1_RUN_"+id+"__";phase="running";capturing=false;capture="";
+ runInfo={id,date:new Date().toISOString(),config:p,output:"",exitCode:null,marker:currentMarker};
+ checks.textContent="";$("evidence").textContent="等待真实 stderr…";$("reflection").textContent="";
+ summary.textContent="正在创建真实文件，随后测试同一批数据。";setStep(3,"active");setStep(4,"");setStep(5,"");controls();
+ runTimer=setTimeout(()=>{if(phase==="running"&&runInfo.id===id){runInfo.output=capture;runInfo.exitCode="timeout";capturing=false;phase="error";setStep(4,"fail");evaluate(runInfo);controls();say("实验超时，请重置虚拟机后再运行。")}},240000);
+ try{sendRaw(makeGuest(p,currentMarker))}catch(e){clearTimeout(runTimer);phase="error";say("发送失败："+e.message);controls()}
 }
-function field(output,key){const m=output.match(new RegExp("(?:^|\\n)"+key+"=\\s*([^\\r\\n]+)"));return m?m[1].trim():null}
+function field(output,key){const m=output.match(new RegExp("(?:^|\\n)"+key+"=[ \\t]*([^\\r\\n]+)"));return m?m[1].trim():null}
 function evaluate(result){
- const o=result.output;
- const kernel=field(o,"LX_KERNEL"),baseline=field(o,"LX_BASELINE"),tested=field(o,"LX_TESTED");
- const hit=field(o,"LX_E2BIG"),batch=field(o,"LX_BATCH"),cleanup=field(o,"LX_CLEANUP"),reason=field(o,"LX_ERROR"),stack=field(o,"LX_STACK_KIB");
- const numeric=x=>x!==null&&/^\d+$/.test(x);
- const trials=[256,512,1024,2048,4096].map(n=>[n,field(o,"LX_TRIAL_"+n)]).filter(x=>x[1]!==null);
- const last=trials.length?trials[trials.length-1]:null;
+ const o=result.output,p=result.config,m=result.marker;
+ const val=k=>field(o,"LX_"+k),num=k=>{const v=val(k);return v!==null&&/^\d+$/.test(v)?Number(v):null};
+ const count=num("COUNT"),bytes=num("BYTES"),length=num("NAME_LEN"),one=num("ONE_MATCH"),rc=num("ONE_RC"),hit=val("E2BIG"),batch=num("BATCH_MATCH"),brc=num("BATCH_RC"),calls=num("CALLS"),stack=num("STACK");
+ const complete=result.exitCode==="0"&&count===p.n&&length===p.len&&bytes===p.n*(p.len+1)&&stack===p.stack&&val("CLEANUP")==="1";
+ const observation=hit==="1"&&rc!==null&&rc!==0?"big":hit==="0"&&rc===0&&one===count&&count===p.n?"ok":"other";
+ const batchOK=brc===0&&batch===count&&count===p.n&&calls===Math.ceil(p.n/64);
+ const observed=observation==="big"?"参数超限（E2BIG）":observation==="ok"?"一次调用成功":"其他错误或证据不足";
+ const prediction=p.prediction==="unsure"?"探索性预测":observation==="other"?"无法比较":p.prediction===observation?"预测吻合":"预测不吻合";
+ const begin=o.indexOf(m+"_ERR_BEGIN\n"),end=o.indexOf("\n"+m+"_ERR_END",begin);
+ $("evidence").textContent=begin>=0&&end>=0?(o.slice(begin+m.length+"_ERR_BEGIN\n".length,end).trim()||"（无 stderr 输出）"):"未取得完整 stderr；请看终端。";
  const items=[
-  ["内核版本",kernel,"可读取内核版本",!!kernel],
-  ["grep 基准执行",baseline,"actual.txt",baseline==="actual.txt"],
-  ["参数压力测试",tested,"256–4096 个合成路径参数",numeric(tested)&&Number(tested)>=256],
-  ["E2BIG 边界判定",hit,"0=未触达；1=触发",hit==="0"||hit==="1"],
-  ["分批匹配",batch,"2 个真实文件",batch==="2"],
-  ["自动清理",cleanup,"done",cleanup==="done"]
+ ["真实文件",count,p.n+" 个；每个文件名 "+p.len+" B",count===p.n&&length===p.len],
+ ["路径参数总字节数",bytes,p.n*(p.len+1)+" B（包括 NUL）",bytes===p.n*(p.len+1)],
+ ["实际栈软限制",stack,p.stack+" KiB；原值 "+(val("STACK_BEFORE")||"未知"),stack===p.stack],
+ ["环境 / 内核参数限制",(val("ENV_BYTES")||"未取得")+" B / "+(val("ARGMAX")||"未取得"),"可选工具观测，不使用理论值填补缺失",true],
+ ["一次 grep",observed,"退出状态 "+(rc??"未知")+"；匹配 "+(one??"未知"),observation!=="other"],
+ ["同一批文件分组 grep",batch,"应匹配 "+p.n+" 个；实际调用 "+(calls??"未知")+" 次",batchOK],
+ ["清理验证",val("CLEANUP")==="1"?"目录已删除":"未确认","实际检查临时目录是否存在",val("CLEANUP")==="1"]
  ];
  checks.textContent="";
- for(const [name,actual,expected,pass] of items){
-  const div=document.createElement("div");div.className="check "+(pass?"pass":"fail");
-  const b=document.createElement("b");b.textContent=(pass?"✓ ":"✗ ")+name;
-  const a=document.createElement("small");a.textContent="Linux 返回："+(actual??"未取得");
-  const e=document.createElement("small");e.textContent="参考："+expected;
-  div.append(b,a,e);checks.append(div);
- }
- const passCount=items.filter(x=>x[3]).length;
- const all=passCount===6&&!reason&&result.exitCode==="0";
- const interpretation=hit==="1"?"已观察到 Argument list too long（E2BIG）。":"在所测参数范围内未观察到 E2BIG；内核的限制可能更高。";
- summary.textContent="完成 "+passCount+"/6 项检查。栈软限制："+(stack||"未取得")+" KiB。"+interpretation+" 最后一次测试："+(last?last[0]+" 项 → "+last[1]:"无记录")+(reason?"；"+reason:"");
- setStep(5,all?"done":"fail");
- say(all?"已完成 Linux 参数压力测试和分批处理验证。":"结果不完整，请检查终端和工具支持情况。");
+ for(const [name,actual,expected,pass] of items){const card=document.createElement("div");card.className="check "+(pass?"pass":"fail");const b=document.createElement("b");b.textContent=name;const a=document.createElement("small");a.textContent="观测："+(actual??"未取得");const e=document.createElement("small");e.textContent=expected;card.append(b,a,e);checks.append(card)}
+ summary.textContent=observed+"；"+(batchOK?"分批处理找回全部真实文件。":"分批结果尚未验证。")+" "+prediction+"。"+(!complete?" 本轮采集不完整。":"");
+ $("reflection").textContent=observation==="big"&&batchOK?"证据：同一批真实文件，一次调用失败而分组成功，说明瓶颈在一次程序启动所携带的参数，而不是 grep 无法处理这些文件。接下来只改变文件名长度或栈限制，再比较。":observation==="ok"?"本轮尚未超限。保持其他变量不变，增加数量或文件名长度，再寻找首次失败的区间。":"不能把其他错误当成 E2BIG；先阅读 stderr 和终端日志。";
+ records.push({...result,count,bytes,length,stack,one,rc,hit,batch,brc,calls,observed,prediction,complete,batchOK,environment:val("ENV_BYTES"),argmax:val("ARGMAX")});
+ renderHistory();setStep(5,complete&&observation!=="other"&&batchOK?"done":"fail");say("本轮实验结束："+observed);
 }
+function renderHistory(){
+ const tbody=$("history");tbody.textContent="";
+ for(const r of records){const tr=document.createElement("tr");for(const v of [r.id,r.count??"—",r.length??"—",r.stack??"—",r.config.env,r.bytes??"—",r.observed,r.batch??"—",r.prediction]){const td=document.createElement("td");td.textContent=v;tr.append(td)}tbody.append(tr)}
+}
+$("clearhistory").onclick=()=>{records.length=0;renderHistory();controls()};
 async function restart(){
  ++bootToken;clearClocks();const current=vm;vm=null;phase="idle";readyProbe=false;tail="";line="";capturing=false;capture="";runInfo=null;
  try{if(current&&typeof current.destroy==="function")await current.destroy()}catch(e){console.warn(e)}
@@ -292,9 +322,10 @@ cmd.addEventListener("blur",()=>{cmd.dataset.focused="false"});
 sendBtn.addEventListener("click",manual);
 
 downloadBtn.addEventListener("click",()=>{
- if(!runInfo)return;
- const blob=new Blob(["EP001 browser Linux argument-limit experiment\n"+runInfo.date+"\nexitCode="+runInfo.exitCode+"\n\n"+runInfo.output],{type:"text/plain;charset=utf-8"});
- const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ep001-browser-linux-result.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ if(!records.length)return;
+ const report={title:"EP001 · 知识发现实验报告",conclusion:$("conclusion").value,runs:records};
+ const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json;charset=utf-8"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ep001-discovery-report.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 });
 purgeBtn.addEventListener("click",async()=>{
  purgeBtn.disabled=true;
@@ -306,6 +337,6 @@ purgeBtn.addEventListener("click",async()=>{
  finally{purgeBtn.disabled=false}
 });
 cacheReadyPromise=ensureCacheSupport().then(cacheInventory);
-controls();
+estimate();
 </script>
 </body></html>
