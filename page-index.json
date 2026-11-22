@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "source": "git-last-commit",
-  "generated_at": "2026-11-22T00:37:45.225376+00:00",
-  "count": 74,
+  "generated_at": "2026-11-22T00:39:41.090619+00:00",
+  "count": 73,
   "pages": [
     {
       "title": "EP001 · Live Linux Lab · 自动验证",
@@ -44,13 +44,6 @@
       "url": "/linux-extreme/",
       "path": "linux-extreme/index.html",
       "updated_at": "2026-11-17T10:07:25+08:00",
-      "category": "Linux / Systems"
-    },
-    {
-      "title": "Linux Extreme × Limitless — 系列实施规范",
-      "url": "/linux-extreme/REQUIREMENTS.html",
-      "path": "linux-extreme/REQUIREMENTS.md",
-      "updated_at": "2026-11-16T13:23:01+08:00",
       "category": "Linux / Systems"
     },
     {
