@@ -22,7 +22,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 <label>文件名长度（ASCII 字节） <output id="lv"></output><input id="len" type="range" min="16" max="240" value="180"></label>
 <label>栈软限制（KiB）<select id="stack"><option>256</option><option>512</option><option>1024</option><option>8192</option></select></label>
 <label>额外环境变量值（KiB）<select id="env"><option>0</option><option>16</option><option>32</option><option>64</option></select></label></div><p id="estimate" class="note"></p>
-<label>你的预测<select id="prediction"><option value="">请选择预测</option><option value="ok">一次 grep 能匹配所有文件</option><option value="big">一次 grep 将因参数超限失败</option><option value="unsure">不确定，先验证</option></select></label><label>预测依据（选填）<textarea id="reason" rows="2" placeholder="我认为影响边界的是……"></textarea></label><p class="note">①→②只改数量；②→③只改长度；②→④只改栈；①→⑤只改环境。每次实验保留独立记录。</p><details><summary>查看本轮实际测试脚本</summary><pre id="preview"></pre></details></section>
+<label>你的预测<select id="prediction" required><option value="">请选择预测</option><option value="ok">一次 grep 能匹配所有文件</option><option value="big">一次 grep 将因参数超限失败</option><option value="unsure">不确定，先验证</option></select></label><label>预测依据（选填）<textarea id="reason" rows="2" placeholder="我认为影响边界的是……"></textarea></label><p class="note">①→②只改数量；②→③只改长度；②→④只改栈；①→⑤只改环境。每次实验保留独立记录。</p><details><summary>查看本轮实际测试脚本</summary><pre id="preview"></pre></details></section>
 <div id="steps" aria-label="实验流程">
  <div class="step active" id="s1">① 点击启动</div><div class="step" id="s2">② Linux 就绪</div><div class="step" id="s3">③ 一键执行</div><div class="step" id="s4">④ 采集结果</div><div class="step" id="s5">⑤ 对照验证</div>
 </div>
@@ -31,7 +31,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <button id="run" disabled>验证我的预测</button>
  <button id="restart" class="secondary" disabled>重置</button><button id="purge" class="secondary">清除 Linux 资源缓存</button>
 </div>
-<p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
+<p id="prediction-hint" class="note" aria-live="polite">请先启动 Linux。</p><p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
 <div id="terminal" role="region" aria-label="支持 ANSI 颜色与控制序列的 Linux 终端"></div><p class="note">鼠标选中文字后按 Ctrl+C（Mac：Command+C），或右键选择复制。未选中文字时 Ctrl+C 仍用于中断 Linux 当前命令。</p>
 <div class="controls" id="editor-row">
  <textarea id="cmd" rows="2" placeholder="在此输入 Linux 命令，例如 uname -a。按 Enter 发送，Shift+Enter 换行。" aria-label="可编辑的 Linux 命令输入区" autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="0"></textarea>
@@ -137,7 +137,7 @@ async function loadWasm(){
 }
 function loadScript(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error("无法加载模拟器脚本"));document.head.append(script)})}
 function sendRaw(s){if(!vm)throw new Error("Linux 尚未启动");vm.serial0_send(s+"\n")}
-function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready||!$("prediction").value;for(const id of ["n","len","stack","env","prediction","reason","pbase","pcount","plen","pstack","penv"])$(id).disabled=running;sendBtn.disabled=false;cmd.disabled=false;cmd.readOnly=false;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!records.length;runBtn.textContent=running?"实验执行中…":"验证我的预测"}
+function controls(){const ready=phase==="ready",running=phase==="running";bootBtn.disabled=phase!=="idle";runBtn.disabled=!ready; $("prediction-hint").textContent=running?"正在验证本轮预测，请等待结果。":!ready?"请先启动 Linux。":!$("prediction").value?"Linux 已就绪。点击验证后可选择预测，也可先在上方填写。":"预测已选择，可以运行实验。";for(const id of ["n","len","stack","env","prediction","reason","pbase","pcount","plen","pstack","penv"])$(id).disabled=running;sendBtn.disabled=false;cmd.disabled=false;cmd.readOnly=false;restartBtn.disabled=phase==="idle";downloadBtn.disabled=!records.length;runBtn.textContent=running?"实验执行中…":"验证我的预测"}
 function probe(){if(readyProbe||phase!=="booting")return;readyProbe=true;say("Linux 已出现 shell 提示符，正在验证命令交互…");sendRaw("printf '\\n"+readyMarker+"\\n'")}
 function onLine(v){
  const s=v.trim();
@@ -214,7 +214,7 @@ $("pcount").onclick=()=>preset(1024,180,256,0);
 $("plen").onclick=()=>preset(1024,60,256,0);
 $("pstack").onclick=()=>preset(1024,180,1024,0);
 $("penv").onclick=()=>preset(512,180,256,64);
-for(const id of fields)$(id).addEventListener("input",()=>{if(["n","len","stack","env"].includes(id))$("prediction").value="";estimate()});
+for(const id of fields)$(id).addEventListener("input",()=>{if(["n","len","stack","env"].includes(id))$("prediction").value="";estimate()}); $("prediction").addEventListener("change",estimate);
 function makeGuest(p,marker){
  return [
  "(",
@@ -263,7 +263,7 @@ function makeGuest(p,marker){
 let currentMarker="";
 function run(){
  if(phase!=="ready")return;
- const p=config();if(!p.prediction){say("请先选择你的预测。");$("prediction").focus();return}
+ const p=config();if(!p.prediction){say("请先选择你的预测（也可以选择“不确定，先验证”）。");const choice=$("prediction");choice.scrollIntoView({block:"center",behavior:"smooth"});choice.focus({preventScroll:true});choice.reportValidity();return}
  if(!Number.isInteger(p.n)||p.n<128||p.n>2048||!Number.isInteger(p.len)||p.len<16||p.len>240||![256,512,1024,8192].includes(p.stack)||![0,16,32,64].includes(p.env))return;
  const id=++runCount;currentMarker="__LX1_RUN_"+id+"__";phase="running";capturing=false;capture="";
  runInfo={id,date:new Date().toISOString(),config:p,output:"",exitCode:null,marker:currentMarker};
