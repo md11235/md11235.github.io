@@ -9,7 +9,6 @@ Linux 操作系统极限实验专题。
 
 ## EP001 实测与截图（2026-11-16）
 
-- [系列编写规范](REQUIREMENTS.md)
 - [终端模拟器截图（SVG）](artifacts/ep001/terminal.svg)
 - [原始输出](artifacts/ep001/output.txt) / [结果摘要](artifacts/ep001/result-summary.txt)
 - [截图生成器](tools/render-terminal-shot.py)：用真实日志生成 PNG/SVG，需要 Python 3 和 Pillow。
