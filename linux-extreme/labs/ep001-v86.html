@@ -22,7 +22,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
 <label>文件名长度（ASCII 字节） <output id="lv"></output><input id="len" type="range" min="16" max="240" value="180"></label>
 <label>栈软限制（KiB）<select id="stack"><option>256</option><option>512</option><option>1024</option><option>8192</option></select></label>
 <label>额外环境变量值（KiB）<select id="env"><option>0</option><option>16</option><option>32</option><option>64</option></select></label></div><p id="estimate" class="note"></p>
-<label>你的预测<select id="prediction"><option value="">请选择预测</option><option value="ok">一次 grep 能匹配所有文件</option><option value="big">一次 grep 将因参数超限失败</option><option value="unsure">不确定，先验证</option></select></label><label>预测依据（选填）<textarea id="reason" rows="2" placeholder="我认为影响边界的是……"></textarea></label><p class="note">①→②只改数量；②→③只改长度；②→④只改栈；②→⑤只改环境。每次实验保留独立记录。</p><details><summary>查看本轮实际测试脚本</summary><pre id="preview"></pre></details></section>
+<label>你的预测<select id="prediction"><option value="">请选择预测</option><option value="ok">一次 grep 能匹配所有文件</option><option value="big">一次 grep 将因参数超限失败</option><option value="unsure">不确定，先验证</option></select></label><label>预测依据（选填）<textarea id="reason" rows="2" placeholder="我认为影响边界的是……"></textarea></label><p class="note">①→②只改数量；②→③只改长度；②→④只改栈；①→⑤只改环境。每次实验保留独立记录。</p><details><summary>查看本轮实际测试脚本</summary><pre id="preview"></pre></details></section>
 <div id="steps" aria-label="实验流程">
  <div class="step active" id="s1">① 点击启动</div><div class="step" id="s2">② Linux 就绪</div><div class="step" id="s3">③ 一键执行</div><div class="step" id="s4">④ 采集结果</div><div class="step" id="s5">⑤ 对照验证</div>
 </div>
@@ -211,8 +211,8 @@ $("pbase").onclick=()=>preset(512,180,256,0);
 $("pcount").onclick=()=>preset(1024,180,256,0);
 $("plen").onclick=()=>preset(1024,60,256,0);
 $("pstack").onclick=()=>preset(1024,180,1024,0);
-$("penv").onclick=()=>preset(512,180,256,32);
-for(const id of fields)$(id).addEventListener("input",estimate);
+$("penv").onclick=()=>preset(512,180,256,64);
+for(const id of fields)$(id).addEventListener("input",()=>{if(["n","len","stack","env"].includes(id))$("prediction").value="";estimate()});
 function makeGuest(p,marker){
  return [
  "(",
@@ -275,7 +275,7 @@ function evaluate(result){
  const o=result.output,p=result.config,m=result.marker;
  const val=k=>field(o,"LX_"+k),num=k=>{const v=val(k);return v!==null&&/^\d+$/.test(v)?Number(v):null};
  const count=num("COUNT"),bytes=num("BYTES"),length=num("NAME_LEN"),one=num("ONE_MATCH"),rc=num("ONE_RC"),hit=val("E2BIG"),batch=num("BATCH_MATCH"),brc=num("BATCH_RC"),calls=num("CALLS"),stack=num("STACK");
- const complete=result.exitCode==="0"&&count===p.n&&length===p.len&&bytes===p.n*(p.len+1)&&stack===p.stack&&val("CLEANUP")==="1";
+ const complete=result.exitCode==="0"&&num("BASELINE")===1&&count===p.n&&length===p.len&&bytes===p.n*(p.len+1)&&stack===p.stack&&val("CLEANUP")==="1";
  const observation=hit==="1"&&rc!==null&&rc!==0?"big":hit==="0"&&rc===0&&one===count&&count===p.n?"ok":"other";
  const batchOK=brc===0&&batch===count&&count===p.n&&calls===Math.ceil(p.n/64);
  const observed=observation==="big"?"参数超限（E2BIG）":observation==="ok"?"一次调用成功":"其他错误或证据不足";
@@ -283,10 +283,10 @@ function evaluate(result){
  const begin=o.indexOf(m+"_ERR_BEGIN\n"),end=o.indexOf("\n"+m+"_ERR_END",begin);
  $("evidence").textContent=begin>=0&&end>=0?(o.slice(begin+m.length+"_ERR_BEGIN\n".length,end).trim()||"（无 stderr 输出）"):"未取得完整 stderr；请看终端。";
  const items=[
- ["真实文件",count,p.n+" 个；每个文件名 "+p.len+" B",count===p.n&&length===p.len],
+ ["真实文件",count,p.n+" 个；每个文件名 "+p.len+" B；单文件基准匹配 "+(val("BASELINE")||"未取得"),count===p.n&&length===p.len&&num("BASELINE")===1],
  ["路径参数总字节数",bytes,p.n*(p.len+1)+" B（包括 NUL）",bytes===p.n*(p.len+1)],
  ["实际栈软限制",stack,p.stack+" KiB；原值 "+(val("STACK_BEFORE")||"未知"),stack===p.stack],
- ["环境 / 内核参数限制",(val("ENV_BYTES")||"未取得")+" B / "+(val("ARGMAX")||"未取得"),"可选工具观测，不使用理论值填补缺失",true],
+ ["环境 / 内核参数限制",(val("ENV_BYTES")||"未取得")+" B / "+(val("ARGMAX")||"未取得"),"可选工具观测，不使用理论值填补缺失",val("ENV_BYTES")!==null||val("ARGMAX")!==null],
  ["一次 grep",observed,"退出状态 "+(rc??"未知")+"；匹配 "+(one??"未知"),observation!=="other"],
  ["同一批文件分组 grep",batch,"应匹配 "+p.n+" 个；实际调用 "+(calls??"未知")+" 次",batchOK],
  ["清理验证",val("CLEANUP")==="1"?"目录已删除":"未确认","实际检查临时目录是否存在",val("CLEANUP")==="1"]
