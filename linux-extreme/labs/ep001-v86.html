@@ -32,8 +32,8 @@ button:disabled{opacity:.45;cursor:not-allowed}button.secondary{background:#1728
  <button id="restart" class="secondary" disabled>重置</button><button id="purge" class="secondary">清除 Linux 资源缓存</button>
 </div>
 <p id="prediction-hint" class="note" aria-live="polite">请先启动 Linux。</p><p id="status" role="status" class="status">待启动 · Linux 运行在浏览器本机的 WebAssembly 虚拟机中。</p><p id="cache-status" class="cache-info" role="status">缓存状态：初始化中…</p>
-<div id="terminal" role="region" aria-label="支持 ANSI 颜色与控制序列的 Linux 终端"></div><p class="note">鼠标选中文字后按 Ctrl+C（Mac：Command+C），或右键选择复制。未选中文字时 Ctrl+C 仍用于中断 Linux 当前命令。</p>
-<div class="controls" id="editor-row">
+<p class="note">教学终端：自动实验期间显示由真实 Linux 串口数据整理的教学实录；手动命令仍直接显示原始终端输出。完整自动化记录可在下方展开。</p><div id="terminal" role="region" aria-label="支持 ANSI 颜色与控制序列的 Linux 终端"></div><p class="note">鼠标选中文字后按 Ctrl+C（Mac：Command+C），或右键选择复制。未选中文字时 Ctrl+C 仍用于中断 Linux 当前命令。</p>
+<details id="raw-details" style="margin:12px 0"><summary>查看完整原始串口记录（高级 / 调试）</summary><pre id="raw-log" class="evidence" style="max-height:360px;overflow:auto" tabindex="0">尚未执行实验。</pre></details><div class="controls" id="editor-row">
  <textarea id="cmd" rows="2" placeholder="在此输入 Linux 命令，例如 uname -a。按 Enter 发送，Shift+Enter 换行。" aria-label="可编辑的 Linux 命令输入区" autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="0"></textarea>
  <button id="send" class="secondary" type="button">发送命令</button>
  <button id="download" class="secondary" disabled>导出实验报告</button>
@@ -156,7 +156,10 @@ function onLine(v){
  }
 }
 function onByte(byte){
- const c=String.fromCharCode(byte);append(decoder.decode(Uint8Array.of(byte),{stream:true}));if(c==="\r")return;
+ const c=String.fromCharCode(byte),decoded=decoder.decode(Uint8Array.of(byte),{stream:true});
+ if(phase==="running"&&runInfo){runInfo.rawSerial+=decoded}
+ else append(decoded);
+ if(c==="\r")return;
  tail=(tail+c).slice(-160);
  if(c==="\n"){onLine(line);line=""}else if(line.length<8000)line+=c;else line=line.slice(-4000)+c;
  if(phase==="booting"&&!readyProbe&&/(~% |(?:^|[\r\n])[#$] )$/.test(tail))probe();
@@ -266,13 +269,68 @@ function run(){
  const p=config();if(!p.prediction){say("请先选择你的预测（也可以选择“不确定，先验证”）。");const choice=$("prediction");choice.scrollIntoView({block:"center",behavior:"smooth"});choice.focus({preventScroll:true});choice.reportValidity();return}
  if(!Number.isInteger(p.n)||p.n<128||p.n>2048||!Number.isInteger(p.len)||p.len<16||p.len>240||![256,512,1024,8192].includes(p.stack)||![0,16,32,64].includes(p.env))return;
  const id=++runCount;currentMarker="__LX1_RUN_"+id+"__";phase="running";capturing=false;capture="";
- runInfo={id,date:new Date().toISOString(),config:p,output:"",exitCode:null,marker:currentMarker};
+ runInfo={id,date:new Date().toISOString(),config:p,output:"",rawSerial:"",exitCode:null,marker:currentMarker};
+ $("raw-log").textContent="实验运行中，结束后查看完整串口记录。"; $("raw-details").open=false;
+ append("\r\n\x1b[1;36m━━ 实验 "+id+" · 正在真实 Linux 中执行 ━━\x1b[0m\r\n"); append("准备 "+p.n+" 个真实文件；每个文件名 "+p.len+" B。\r\n正在比较一次 grep 与分批 grep，请观察结果。\r\n");
  checks.textContent="";$("evidence").textContent="等待真实 stderr…";$("reflection").textContent="";
  summary.textContent="正在创建真实文件，随后测试同一批数据。";setStep(3,"active");setStep(4,"");setStep(5,"");controls();
  runTimer=setTimeout(()=>{if(phase==="running"&&runInfo.id===id){runInfo.output=capture;runInfo.exitCode="timeout";capturing=false;phase="error";setStep(4,"fail");evaluate(runInfo);controls();say("实验超时，请重置虚拟机后再运行。")}},240000);
  try{sendRaw(makeGuest(p,currentMarker))}catch(e){clearTimeout(runTimer);phase="error";say("发送失败："+e.message);controls()}
 }
 function field(output,key){const m=output.match(new RegExp("(?:^|\\n)"+key+"=[ \\t]*([^\\r\\n]+)"));return m?m[1].trim():null}
+function teachingTranscript(result,data){
+ const {count,length,bytes,stack,before,kernel,env,one,rc,hit,batch,brc,calls,err,baseline,complete,batchOK,observation,prediction}=data;
+ const show=v=>v===null||v===undefined?"未取得":String(v);
+ const p=result.config;
+ const rows=[
+ "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+ "实验 "+result.id+" · "+p.n+" 个文件能否一次处理？",
+ "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+ "",
+ "[1] 实验环境",
+ "Linux 内核："+show(kernel),
+ "原始栈软限制："+show(before)+" KiB",
+ "实际栈软限制："+show(stack)+" KiB",
+ "环境变量输出字节数（env | wc -c）："+show(env)+" B",
+ "",
+ "[2] 实验数据（真实文件）",
+ "文件数量："+show(count),
+ "文件名长度："+show(length)+" B",
+ "每个文件写入一行 NEEDLE；单文件基准匹配："+show(baseline),
+ "文件名参数字符串总量（含 NUL）："+show(bytes)+" B",
+ count!==null&&length!==null&&bytes!==null?count+" × ("+length+" + 1) = "+bytes+" B":"尚无法核对字节数。",
+ "其中 +1 是字符串结束符；尚未计入参数指针、程序名和环境等。",
+ "",
+ "[3] 一次调用 grep",
+ "核心命令：grep -l NEEDLE *.txt",
+ "（实际脚本用外部 grep 的绝对路径，输出重定向后统计）",
+ "退出状态："+show(rc),
+ "匹配文件数："+show(one),
+ "原始 stderr："+show(err),
+ observation==="big"?"观察：Shell 报告 Argument list too long；grep 未能成功启动。":observation==="ok"?"观察：本轮 grep 成功启动并匹配全部文件。":"观察：本轮证据不足或存在其他错误，不能判定为 E2BIG。",
+ "",
+ "[4] 分批处理完全相同的文件",
+ "每次最多携带 64 个文件名参数。",
+ "实际调用次数："+show(calls),
+ "分批退出状态（汇总）："+show(brc),
+ "总匹配文件数："+show(batch),
+ batchOK?"观察：分批处理匹配了全部文件。":"观察：尚未确认分批处理成功。",
+ "",
+ "[5] 预测与观测",
+ "本轮预测："+({ok:"一次调用成功",big:"参数超限",unsure:"不确定"}[p.prediction]||"未填写"),
+ "对照结果："+prediction,
+ !complete?"本轮记录不完整，不宜据此得出结论。":observation==="big"&&batchOK?"证据：对同一批数据，一次调用受限而分批成功。":observation==="ok"?"证据：当前条件下尚未触达参数边界。":"先排查错误，再做对照。",
+ "",
+ "[6] 下一步：只改变一个变量",
+ observation==="ok"?(p.n<2048?"增加文件数量，保持名称长度、栈和环境不变。":"增加文件名长度，或降低栈限制；每轮只改一个变量。"):observation==="big"?"保持数量不变，缩短文件名或增大栈软限制，重新预测。":"查看原始记录并排查，暂不推断参数边界。",
+ "问题：结果是否改变？哪一个变量能解释变化？",
+ "完整原始记录保留在下方，可随报告导出。"
+ ];
+ const text=rows.join("\n");
+ result.teachingTranscript=text;
+ $("raw-log").textContent=result.rawSerial||"未取得完整串口记录。";
+ append("\r\n"+text.replace(/\n/g,"\r\n")+"\r\n");
+}
 function evaluate(result){
  const o=result.output,p=result.config,m=result.marker;
  const val=k=>field(o,"LX_"+k),num=k=>{const v=val(k);return v!==null&&/^\d+$/.test(v)?Number(v):null};
@@ -297,6 +355,7 @@ function evaluate(result){
  for(const [name,actual,expected,pass] of items){const card=document.createElement("div");card.className="check "+(pass?"pass":"fail");const b=document.createElement("b");b.textContent=name;const a=document.createElement("small");a.textContent="观测："+(actual??"未取得");const e=document.createElement("small");e.textContent=expected;card.append(b,a,e);checks.append(card)}
  summary.textContent=observed+"；"+(batchOK?"分批处理找回全部真实文件。":"分批结果尚未验证。")+" "+prediction+"。"+(!complete?" 本轮采集不完整。":"");
  $("reflection").textContent=observation==="big"&&batchOK?"证据：同一批真实文件，一次调用失败而分组成功，说明瓶颈在一次程序启动所携带的参数，而不是 grep 无法处理这些文件。接下来只改变文件名长度或栈限制，再比较。":observation==="ok"?"本轮尚未超限。保持其他变量不变，增加数量或文件名长度，再寻找首次失败的区间。":"不能把其他错误当成 E2BIG；先阅读 stderr 和终端日志。";
+ teachingTranscript(result,{count,length,bytes,stack,before:val("STACK_BEFORE"),kernel:val("KERNEL"),env:val("ENV_BYTES"),one,rc,hit,batch,brc,calls,err:begin>=0&&end>=0?(o.slice(begin+m.length+"_ERR_BEGIN\n".length,end).trim()||"（无）"):null,baseline:num("BASELINE"),complete,batchOK,observation,prediction});
  records.push({...result,count,bytes,length,stack,one,rc,hit,batch,brc,calls,observed,prediction,complete,batchOK,environment:val("ENV_BYTES"),argmax:val("ARGMAX")});
  renderHistory();compareRuns();setStep(5,complete&&observation!=="other"&&batchOK?"done":"fail");say("本轮实验结束："+observed);
 }
