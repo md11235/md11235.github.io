@@ -1,9 +1,23 @@
 {
   "schema": 1,
   "source": "git-last-commit",
-  "generated_at": "2026-11-22T03:27:26.240423+00:00",
-  "count": 73,
+  "generated_at": "2026-11-26T12:58:49.788282+00:00",
+  "count": 75,
   "pages": [
+    {
+      "title": "Observing Bash Internals",
+      "url": "/observing-bash-internals/",
+      "path": "observing-bash-internals/index.html",
+      "updated_at": "2026-11-26T20:58:41+08:00",
+      "category": "Linux / Systems"
+    },
+    {
+      "title": "EP001：为什么 cat 持有同一管道的两个文件描述符？",
+      "url": "/observing-bash-internals/ep001.html",
+      "path": "observing-bash-internals/ep001.html",
+      "updated_at": "2026-11-26T20:58:40+08:00",
+      "category": "Linux / Systems"
+    },
     {
       "title": "EP001 · Live Linux Lab · 自动验证",
       "url": "/linux-extreme/labs/ep001-v86.html",
